@@ -10,19 +10,19 @@
 # There are some restrictions on what makes a valid project name
 # specification here:
 # https://packaging.python.org/specifications/core-metadata/#name
-name = "sampleproject"  # Required
+name = "asleep"  # Required
 
 # Versions should comply with PEP 440:
 # https://www.python.org/dev/peps/pep-0440/
 #
 # For a discussion on single-sourcing the version, see
 # https://packaging.python.org/guides/single-sourcing-package-version/
-version = "3.0.0"  # Required
+version = "0.1.0"  # Required
 
 # This is a one-line description or tagline of what your project does. This
 # corresponds to the "Summary" metadata field:
 # https://packaging.python.org/specifications/core-metadata/#summary
-description = "A sample Python project"  # Optional
+description = "A sleep classification tool for wearables"  # Optional
 
 # This is an optional longer description of your project that represents
 # the body of text which users will see when they visit PyPI.
@@ -43,7 +43,7 @@ requires-python = ">=3.7"
 # This is either text indicating the license for the distribution, or a file
 # that contains the license
 # https://packaging.python.org/en/latest/specifications/core-metadata/#license
-license = {file = "LICENSE.txt"}
+license = {file = "LICENSE.md"}
 
 # This field adds keywords for your project which will appear on the
 # project page. What does your project relate to?
@@ -57,14 +57,14 @@ keywords = ["sample", "setuptools", "development"]  # Optional
 # authored the project, and a valid email address corresponding to the name
 # listed.
 authors = [
-  {name = "A. Random Developer", email = "author@example.com" } # Optional
+  {name = "Hang Yuan", email = "angerhangy@gmail.com" } # Optional
 ]
 
 # This should be your name or the names of the organization who currently
 # maintains the project, and a valid email address corresponding to the name
 # listed.
 maintainers = [
-  {name = "A. Great Maintainer", email = "maintainer@example.com" } # Optional
+  {name = "Hang Yuan", email = "angerhangy@gmail.com" } # Optional
 ]
 
 # Classifiers help users find your project by categorizing it.
@@ -79,7 +79,11 @@ classifiers = [  # Optional
 
   # Indicate who your project is intended for
   "Intended Audience :: Developers",
-  "Topic :: Software Development :: Build Tools",
+  "Intended Audience :: Education",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Healthcare Industry",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Medical Science Apps.",
 
   # Pick your license as you wish
   "License :: OSI Approved :: MIT License",
@@ -129,23 +133,21 @@ test = ["coverage"]
 # maintainers, and where to support the project financially. The key is
 # what's used to render the link text on PyPI.
 [project.urls]  # Optional
-"Homepage" = "https://github.com/pypa/sampleproject"
-"Bug Reports" = "https://github.com/pypa/sampleproject/issues"
-"Funding" = "https://donate.pypi.org"
-"Say Thanks!" = "http://saythanks.io/to/example"
-"Source" = "https://github.com/pypa/sampleproject/"
+"Homepage" = "https://github.com/OxWearables/asleep"
+"Bug Reports" = "https://github.com/OxWearables/asleep/issues"
+"Source" = "https://github.com/OxWearables/asleep"
 
 # The following would provide a command line executable called `sample`
 # which executes the function `main` from this package when invoked.
-[project.scripts]  # Optional
-sample = "sample:main"
+#[project.scripts]  # Optional
+#sample = "sample:main"
 
 # This is configuration specific to the `setuptools` build backend.
 # If you are using a different build backend, you will need to change this.
 [tool.setuptools]
 # If there are data files included in your packages that need to be
 # installed, specify them here.
-package-data = {"sample" = ["*.dat"]}
+#package-data = {"sample" = ["*.dat"]}
 
 [build-system]
 # These are the assumed default build requirements from pip:
