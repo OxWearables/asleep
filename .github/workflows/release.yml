@@ -23,6 +23,7 @@ jobs:
     - name: Build
       run: python -m build .
     - name: Publish
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@master
       with:
         password: ${{ secrets.pypi_password }}
