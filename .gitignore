@@ -8,6 +8,8 @@ __pycache__/
 *.so
 *~
 .idea
+data
+outputs
 
 # due to using tox and pytest
 .tox

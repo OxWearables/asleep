@@ -8,6 +8,9 @@ The key features of this package are as follows:
 * Sleep architecture metric estimation including rapid-eye-movement(REM)/NREM sleep duration.
 
 
+![overview](./assets/figure.jpg)
+
+
 ## Dependencies
 - Python 3.6+
 - Java 8 (1.8.0) or greater 
@@ -17,7 +20,7 @@ $ java -version
 
 ## Installation
 ```bash
-$ pip install stepcount
+$ pip install asleep
 ```
 
 ## Usage
@@ -85,4 +88,6 @@ TBD
 
 ## Acknowledgements
 We would like to thank all our code contributors, manuscript co-authors, and research participants for their help in making this work possible. The 
-data processing pipeline of this repository is based on the [step_count](https://github.com/OxWearables/stepcount#processing-csv-files) package from our group.
+data processing pipeline of this repository is based on the [step_count](https://github.com/OxWearables/stepcount#processing-csv-files) package from our group. Special 
+thanks to @chanshing for his help in developing the package.
+
