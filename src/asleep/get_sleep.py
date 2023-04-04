@@ -1,5 +1,4 @@
 import pathlib
-import time
 import argparse
 import numpy as np
 import pandas as pd
@@ -26,23 +25,36 @@ def main():
         add_help=True
     )
     parser.add_argument("filepath", help="Enter file to be processed")
-    parser.add_argument("--outdir", "-o", help="Enter folder location to save output files", default="outputs/")
-    parser.add_argument("--force_download", action="store_true", help="Force download of model file")
-    parser.add_argument("--force_run", action="store_true", help="asleep package won't rerun the analysis to save "
-                                                                 "time. force_run will make sure everything is "
-                                                                 "regenerated")
-    parser.add_argument("--pytorch_device", "-d", help="Pytorch device to use, e.g.: 'cpu' or 'cuda:0' (for SSL only)",
-                        type=str, default='cpu')
+    parser.add_argument(
+        "--outdir",
+        "-o",
+        help="Enter folder location to save output files",
+        default="outputs/")
+    parser.add_argument(
+        "--force_download",
+        action="store_true",
+        help="Force download of model file")
+    parser.add_argument(
+        "--force_run",
+        action="store_true",
+        help="asleep package won't rerun the analysis to save "
+        "time. force_run will make sure everything is "
+        "regenerated")
+    parser.add_argument(
+        "--pytorch_device",
+        "-d",
+        help="Pytorch device to use, e.g.: 'cpu' or 'cuda:0' (for SSL only)",
+        type=str,
+        default='cpu')
     args = parser.parse_args()
-
-    before = time.time()
 
     # 1. Parse raw files into a dataframe
     resample_hz = 30
     raw_data_path = os.path.join(args.outdir, 'raw.csv')
     info_data_path = os.path.join(args.outdir, 'info.json')
 
-    if os.path.exists(raw_data_path) is False or os.path.exists(info_data_path) is False or args.force_run is True:
+    if os.path.exists(raw_data_path) is False or os.path.exists(
+            info_data_path) is False or args.force_run is True:
         data, info = read(args.filepath, resample_hz)
         data = data.reset_index()
         pathlib.Path(args.outdir).mkdir(parents=True, exist_ok=True)
@@ -60,32 +72,42 @@ def main():
     print(data.head())
 
     # 1.1 Transform data into a usable format for inference
-    """ 
-    Current: 
+    """
+    Current:
                                    x         y         z
-    time                                                       
+    time
     2014-12-17 18:00:00.500000000  0.359059  0.195311 -0.950869
     2014-12-17 18:00:00.533333333  0.331267  0.226415 -0.931257
 
     Desired:
-    times array: 1 x N 
+    times array: 1 x N
     data array: N x 3 x 900 (30 seconds of data at 30Hz)
     """
 
     data2model_path = os.path.join(args.outdir, 'data2model.npy')
     times_path = os.path.join(args.outdir, 'times.npy')
-    if os.path.exists(data2model_path) is False or os.path.exists(times_path) is False or args.force_run is True:
+    if os.path.exists(data2model_path) is False or os.path.exists(
+            times_path) is False or args.force_run is True:
         times = data.time.to_numpy()
         data = data[['x', 'y', 'z']].to_numpy()
         data2model, times = data_long2wide(data, times=times)
 
         np.save(os.path.join(args.outdir, 'data2model.npy'), data2model)
         np.save(os.path.join(args.outdir, 'times.npy'), times)
-        print("Data2model file saved to: {}".format(os.path.join(args.outdir, 'data2model.npy')))
-        print("Times file saved to: {}".format(os.path.join(args.outdir, 'times.npy')))
+        print(
+            "Data2model file saved to: {}".format(
+                os.path.join(
+                    args.outdir,
+                    'data2model.npy')))
+        print(
+            "Times file saved to: {}".format(
+                os.path.join(
+                    args.outdir,
+                    'times.npy')))
 
     else:
-        print("Data2model file already exists. Skipping data2model transformation.")
+        print("Data2model file already exists. "
+              "Skip data transformation.")
         data2model = np.load(data2model_path)
         times = np.load(times_path)
 

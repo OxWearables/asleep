@@ -30,7 +30,6 @@ def data_long2wide(X, times):
     z = z.reshape(-1, 900)
     times = times.reshape(-1, 900)
 
-    X = np.stack((x, y, z),  axis=1)
+    X = np.stack((x, y, z), axis=1)
     times = times[:, 0]
     return X, times
-
