@@ -32,16 +32,14 @@ python
 
 
 def load_data():
-    root = '../processed_data'  # change this path if needed
+    root = '/data/UKBB/capture24_30s/'  # change this path if needed
 
-    X = np.load(os.path.join(root, 'X.npy'), mmap_mode='r')  # accelerometer data
-    Y = np.load(os.path.join(root, 'Y.npy'))  # true labels
+    X = np.load(os.path.join(root, 'X.npy'))  # accelerometer data
+    Y = np.load(os.path.join(root, 'Y_Walmsley.npy'))  # true labels
     pid = np.load(os.path.join(root, 'pid.npy'))  # participant IDs
-    time = np.load(os.path.join(root, 'T.npy'))  # timestamps
-
 
     print(f'X shape: {X.shape}')
-    print(f'Y shape: {Y.shape}')  # same shape as pid and time
+    print(f'Y shape: {Y.shape}')  # same shape as pid
     print(f'Label distribution:\n{pd.Series(Y).value_counts()}')
 
     # The original labels in Y are in categorical format (e.g.: 'light', 'sleep', etc). PyTorch expects numerical labels (e.g.: 0, 1, etc).
@@ -78,16 +76,14 @@ def load_data():
     x_train = X[train_idx]
     y_train = y[train_idx]
     group_train = pid[train_idx]
-    time_train = time[train_idx]
 
     x_test = X[test_idx]
     y_test = y[test_idx]
-    time_test = time[test_idx]
     group_test = pid[test_idx]
 
     return (
-        x_train, y_train, group_train, time_train,
-        x_test, y_test, group_test, time_test,
+        x_train, y_train, group_train,
+        x_test, y_test, group_test,
         le
     )
 
@@ -228,8 +224,8 @@ def predict(model, data_loader, my_device):
 
 def main():
     (
-        x_train, y_train, group_train, time_train,
-        x_test, y_test, group_test, time_test,
+        x_train, y_train, group_train,
+        x_test, y_test, group_test,
         le
     ) = load_data()
 
