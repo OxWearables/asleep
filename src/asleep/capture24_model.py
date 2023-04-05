@@ -23,9 +23,6 @@ Usage:
 ```
 python 
 ```
-
-
-
 """
 
 
@@ -40,17 +37,14 @@ def load_data():
     print(f'Y shape: {Y.shape}')  # same shape as pid
     print(f'Label distribution:\n{pd.Series(Y).value_counts()}')
 
-    # The original labels in Y are in categorical format (e.g.: 'light', 'sleep', etc). PyTorch expects numerical labels (e.g.: 0, 1, etc).
-    # LabelEncoder transforms categorical labels -> numerical.
-    # After obtaining the test predictions, you can use le.inverse_transform(y) to go from numerical -> categorical (the fitted le object is returned at the end of this function)
-    le = LabelEncoder()
-    le.fit(np.unique(Y))
-
-    y = le.transform(Y)
-
-    ## add manual conversion based on a dictionary
-    print(f'Original labels: {le.classes_}')
-    print(f'Transformed labels: {le.transform(le.classes_)}')
+    CAPTURE24_LABELS = {
+        'light': 0,
+        'moderate-vigorous': 1,
+        'sedentary': 2,
+        'sleep': 3,
+    }
+    Y = np.vectorize(CAPTURE24_LABELS.get)(Y)
+    print(f'Label distribution:\n{pd.Series(Y).value_counts()}')
 
     # down sample if required.
     # our pre-trained model expects windows of 30s at 30Hz = 900 samples
