@@ -30,12 +30,12 @@ def load_data():
     root = '/data/UKBB/capture24_30s/'  # change this path if needed
 
     X = np.load(os.path.join(root, 'X.npy'))  # accelerometer data
-    Y = np.load(os.path.join(root, 'Y_Walmsley.npy'))  # true labels
+    y = np.load(os.path.join(root, 'Y_Walmsley.npy'))  # true labels
     pid = np.load(os.path.join(root, 'pid.npy'))  # participant IDs
 
     print(f'X shape: {X.shape}')
-    print(f'Y shape: {Y.shape}')  # same shape as pid
-    print(f'Label distribution:\n{pd.Series(Y).value_counts()}')
+    print(f'Y shape: {y.shape}')  # same shape as pid
+    print(f'Label distribution:\n{pd.Series(y).value_counts()}')
 
     CAPTURE24_LABELS = {
         'light': 0,
@@ -43,8 +43,8 @@ def load_data():
         'sedentary': 2,
         'sleep': 3,
     }
-    Y = np.vectorize(CAPTURE24_LABELS.get)(Y)
-    print(f'Label distribution:\n{pd.Series(Y).value_counts()}')
+    y = np.vectorize(CAPTURE24_LABELS.get)(y)
+    print(f'Label distribution:\n{pd.Series(y).value_counts()}')
 
     # down sample if required.
     # our pre-trained model expects windows of 30s at 30Hz = 900 samples
@@ -76,7 +76,6 @@ def load_data():
     return (
         x_train, y_train, group_train,
         x_test, y_test, group_test,
-        le
     )
 
 
@@ -134,7 +133,7 @@ def train(model, train_loader, val_loader, my_device, weights=None):
             train_losses.append(loss.cpu().detach())
             train_acces.append(train_acc.cpu().detach())
 
-        val_loss, val_acc = _validate_model(model, val_loader, my_device, loss_fn)
+        val_loss, val_acc, val_prob = _validate_model(model, val_loader, my_device, loss_fn)
 
         epoch_len = len(str(num_epoch))
         print_msg = (
@@ -159,12 +158,16 @@ def _validate_model(model, val_loader, my_device, loss_fn):
     model.eval()
     losses = []
     acces = []
+    y_probs = []
     for i, (x, y, _) in enumerate(val_loader):
         with torch.inference_mode():
             x = x.to(my_device, dtype=torch.float)
             true_y = y.to(my_device, dtype=torch.long)
 
             logits = model(x)
+            current_logits = torch.softmax(logits, dim=1)
+            y_probs.extend(current_logits.cpu().detach().numpy())
+
             loss = loss_fn(logits, true_y)
 
             pred_y = torch.argmax(logits, dim=1)
@@ -176,7 +179,11 @@ def _validate_model(model, val_loader, my_device, loss_fn):
             acces.append(val_acc.cpu().detach())
     losses = np.array(losses)
     acces = np.array(acces)
-    return np.mean(losses), np.mean(acces)
+
+    if len(logits) > 0:
+        y_probs = np.stack(y_probs)
+
+    return np.mean(losses), np.mean(acces), y_probs
 
 
 def predict(model, data_loader, my_device):
