@@ -1,5 +1,5 @@
 from stepcount import hmm_utils
-from stepcount import sslmodel
+import sslmodel
 from sklearn.model_selection import GroupShuffleSplit
 import torch
 from scipy.special import softmax

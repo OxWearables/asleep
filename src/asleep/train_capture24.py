@@ -29,6 +29,11 @@ def load_data():
     y = np.load(os.path.join(root, 'Y_Walmsley.npy'))  # true labels
     pid = np.load(os.path.join(root, 'pid.npy'))  # participant IDs
 
+    # train with less today
+    X = X[:10000, :]
+    y = y[:10000]
+    pid = pid[:10000]
+    
     print(f'X shape: {X.shape}')
     print(f'Y shape: {y.shape}')  # same shape as pid
     print(f'Label distribution:\n{pd.Series(y).value_counts()}')
