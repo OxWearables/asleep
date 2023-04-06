@@ -54,6 +54,63 @@ class RotationAxis:
         return sample
 
 
+class NormalDataset(Dataset):
+    """Implements a map-style torch dataset."""
+
+    def __init__(self,
+                 X,
+                 y=None,
+                 pid=None,
+                 name="",
+                 transform=False,
+                 transpose_channels_first=True):
+
+        if transpose_channels_first:
+            # PyTorch expects channels first data format
+            X = np.transpose(X, (0, 2, 1))
+
+        self.X = torch.from_numpy(X)  # convert data to Tensor
+
+        if y is not None:
+            self.y = torch.tensor(y)  # label should be a Tensor too
+        else:
+            self.y = None
+
+        self.pid = pid
+
+        if transform:
+            self.transform = transforms.Compose(
+                [RandomSwitchAxis(), RotationAxis()])
+        else:
+            self.transform = None
+
+        print(name + " set sample count : " + str(len(self.X)))
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        sample = self.X[idx, :]
+
+        if self.y is not None:
+            y = self.y[idx]
+        else:
+            y = np.NaN
+
+        if self.pid is not None:
+            pid = self.pid[idx]
+        else:
+            pid = np.NaN
+
+        if self.transform is not None:
+            sample = self.transform(sample)
+
+        return sample, y, pid
+
+
 def resize(x, length, axis=1):
     """Resize the temporal length using linear interpolation.
     X must be of shape (N,M,C) (channels last) or (N,C,M) (channels first),

@@ -3,14 +3,13 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import random
 from pathlib import Path
-from transforms3d.axangles import axangle2mat
 from tqdm import tqdm
 from torchvision import transforms
 from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
 from utils import EarlyStopping, RandomSwitchAxis, RotationAxis
+
 
 verbose = False
 torch_cache_path = Path(__file__).parent / 'torch_hub_cache'
