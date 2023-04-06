@@ -3,62 +3,16 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import random
 from pathlib import Path
-from transforms3d.axangles import axangle2mat
 from tqdm import tqdm
 from torchvision import transforms
 from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
-from utils import EarlyStopping
+from utils import EarlyStopping, RandomSwitchAxis, RotationAxis
+
 
 verbose = False
 torch_cache_path = Path(__file__).parent / 'torch_hub_cache'
-
-
-class RandomSwitchAxis:
-    """
-    Randomly switch the three axises for the raw files
-    Input size: 3 * FEATURE_SIZE
-    """
-
-    def __call__(self, sample):
-        # 3 * FEATURE
-        x = sample[0, :]
-        y = sample[1, :]
-        z = sample[2, :]
-
-        choice = random.randint(1, 6)
-
-        if choice == 1:
-            sample = torch.stack([x, y, z], dim=0)
-        elif choice == 2:
-            sample = torch.stack([x, z, y], dim=0)
-        elif choice == 3:
-            sample = torch.stack([y, x, z], dim=0)
-        elif choice == 4:
-            sample = torch.stack([y, z, x], dim=0)
-        elif choice == 5:
-            sample = torch.stack([z, x, y], dim=0)
-        elif choice == 6:
-            sample = torch.stack([z, y, x], dim=0)
-
-        return sample
-
-
-class RotationAxis:
-    """
-    Rotation along an axis
-    """
-
-    def __call__(self, sample):
-        # 3 * FEATURE_SIZE
-        sample = np.swapaxes(sample, 0, 1)
-        angle = np.random.uniform(low=-np.pi, high=np.pi)
-        axis = np.random.uniform(low=-1, high=1, size=sample.shape[1])
-        sample = np.matmul(sample, axangle2mat(axis, angle))
-        sample = np.swapaxes(sample, 0, 1)
-        return sample
 
 
 class NormalDataset(Dataset):

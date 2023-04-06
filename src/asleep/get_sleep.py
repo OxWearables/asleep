@@ -6,6 +6,8 @@ import scipy.stats as stats
 import actipy
 import json
 import os
+import joblib
+import sleep_windows as sw
 
 from utils import data_long2wide
 
@@ -84,6 +86,7 @@ def main():
     data array: N x 3 x 900 (30 seconds of data at 30Hz)
     """
 
+    # TODO: refactor the saving and loading functions
     data2model_path = os.path.join(args.outdir, 'data2model.npy')
     times_path = os.path.join(args.outdir, 'times.npy')
     if os.path.exists(data2model_path) is False or os.path.exists(
@@ -116,8 +119,38 @@ def main():
     print("times shape: {}".format(times.shape))
 
     # 2. sleep window detection
+    # 2.1 Sleep wake classification using SSL
+    ssl_sleep_path = os.path.join(args.outdir, 'ssl_sleep.npy')
+    if os.path.exists(ssl_sleep_path) is False or args.force_run is True:
+        sleep_window_detector = joblib.load('assets/ssl.joblib.lzma')
 
-    # 2.1 window correction for false negative
+        sleep_window_detector.device = 'cpu'  # expect channel last
+        data_channel_last = np.swapaxes(data2model, 1, -1)
+        window_pred = sleep_window_detector.predict(data_channel_last)
+        print(window_pred.shape)
+        print(np.unique(window_pred, return_counts=True))
+        np.save(ssl_sleep_path, window_pred)
+    else:
+        window_pred = np.load(ssl_sleep_path)
+
+    ## Testing plan
+    ## TODO: Create visu tool to visualize the results
+    ## TODO 2.2 Window correction for false negative
+
+    # 2.3 Sleep window identification
+    SLEEPNET_LABELS = {
+        0: 0,
+        1: 0,
+        2: 0,
+        3: 1,
+    }
+    binary_y = np.vectorize(SLEEPNET_LABELS.get)(window_pred)
+    my_data = {
+        'time': times,
+        'label': binary_y
+    }
+    my_df = pd.DataFrame(my_data)
+    all_sleep_wins, sleep_wins_long_per_day = sw.time_series2sleep_blocks(my_df)
 
     # 3. sleep stage classification
 

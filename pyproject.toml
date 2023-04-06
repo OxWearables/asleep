@@ -109,7 +109,12 @@ dependencies = [ # Optional
   "actipy",
   "numpy",
   "pandas",
-  "scipy"
+  "scipy",
+  "joblib",
+  "torch",
+  "torchvision",
+  "transforms3d",
+  "stepcount"
 ]
 
 # List additional groups of dependencies here (e.g. development
