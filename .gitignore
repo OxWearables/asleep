@@ -14,3 +14,7 @@ outputs
 # due to using tox and pytest
 .tox
 .cache
+
+src/asleep/torch_hub_cache
+assets/*.joblib.*
+*.ipynb_checkpoints
