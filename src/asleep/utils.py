@@ -7,6 +7,7 @@ from transforms3d.axangles import axangle2mat
 from torchvision import transforms
 from scipy.interpolate import interp1d
 
+
 class RandomSwitchAxis:
     """
     Randomly switch the three axises for the raw files
@@ -65,7 +66,8 @@ class NormalDataset(Dataset):
                  transpose_channels_first=True):
 
         if transpose_channels_first:
-            X = np.transpose(X, (0, 2, 1))  # PyTorch expects channels first data format
+            # PyTorch expects channels first data format
+            X = np.transpose(X, (0, 2, 1))
 
         self.X = torch.from_numpy(X)  # convert data to Tensor
 
@@ -77,7 +79,8 @@ class NormalDataset(Dataset):
         self.pid = pid
 
         if transform:
-            self.transform = transforms.Compose([RandomSwitchAxis(), RotationAxis()])
+            self.transform = transforms.Compose(
+                [RandomSwitchAxis(), RotationAxis()])
         else:
             self.transform = None
 

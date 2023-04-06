@@ -86,7 +86,8 @@ class NormalDataset(Dataset):
         self.pid = pid
 
         if augmentation:
-            self.transform = transforms.Compose([RandomSwitchAxis(), RotationAxis()])
+            self.transform = transforms.Compose(
+                [RandomSwitchAxis(), RotationAxis()])
         else:
             self.transform = None
 
@@ -137,7 +138,9 @@ def get_sslnet(tag='v1.0.0', pretrained=False):
 
     # find repo cache dir that matches repo name and tag
     cache_dirs = [f for f in torch_cache_path.iterdir() if f.is_dir()]
-    repo_path = next((f for f in cache_dirs if repo_name in f.name and tag in f.name), None)
+    repo_path = next(
+        (f for f in cache_dirs if repo_name in f.name and tag in f.name),
+        None)
 
     if repo_path is None:
         repo_path = repo
@@ -148,8 +151,14 @@ def get_sslnet(tag='v1.0.0', pretrained=False):
         if verbose:
             print(f'Using local {repo_path}')
 
-    sslnet: nn.Module = torch.hub.load(repo_path, 'harnet30', trust_repo=True, source=source, class_num=2,
-                                       pretrained=pretrained, verbose=verbose)
+    sslnet: nn.Module = torch.hub.load(
+        repo_path,
+        'harnet30',
+        trust_repo=True,
+        source=source,
+        class_num=4,
+        pretrained=pretrained,
+        verbose=verbose)
     return sslnet
 
 
@@ -170,7 +179,8 @@ def predict(model, data_loader, device, output_logits=False):
     pid_list = []
     model.eval()
 
-    for i, (x, y, pid) in enumerate(tqdm(data_loader, mininterval=60, disable=not verbose)):
+    for i, (x, y, pid) in enumerate(
+            tqdm(data_loader, mininterval=60, disable=not verbose)):
         with torch.inference_mode():
             x = x.to(device, dtype=torch.float)
             logits = model(x)
@@ -198,8 +208,16 @@ def predict(model, data_loader, device, output_logits=False):
         )
 
 
-def train(model, train_loader, val_loader, device, class_weights=None, weights_path='weights.pt',
-          num_epoch=100, learning_rate=0.0001, patience=5):
+def train(
+        model,
+        train_loader,
+        val_loader,
+        device,
+        class_weights=None,
+        weights_path='weights.pt',
+        num_epoch=100,
+        learning_rate=0.0001,
+        patience=5):
     """
     Iterate over the training dataloader and train a pytorch model.
     After each epoch, validate model and early stop when validation loss function bottoms out.
@@ -256,11 +274,11 @@ def train(model, train_loader, val_loader, device, class_weights=None, weights_p
 
         epoch_len = len(str(num_epoch))
         print_msg = (
-                f"[{epoch:>{epoch_len}}/{num_epoch:>{epoch_len}}] | "
-                + f"train_loss: {np.mean(train_losses):.3f} | "
-                + f"train_acc: {np.mean(train_acces):.3f} | "
-                + f"val_loss: {val_loss:.3f} | "
-                + f"val_acc: {val_acc:.2f}"
+            f"[{epoch:>{epoch_len}}/{num_epoch:>{epoch_len}}] | " +
+            f"train_loss: {np.mean(train_losses):.3f} | " +
+            f"train_acc: {np.mean(train_acces):.3f} | " +
+            f"val_loss: {val_loss:.3f} | " +
+            f"val_acc: {val_acc:.2f}"
         )
 
         early_stopping(val_loss, model)

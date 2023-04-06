@@ -1,29 +1,29 @@
 # asleep: a sleep classifier for wearable sensor data using machine learning
-This is a Python package for classifying sleep stages from wearable sensor data/wrist-worn accelerometer. The underlying model 
-was trained and tested in 1000+ nights of multi-centre polysomnography with tri-axial accelerometer data. 
+This is a Python package for classifying sleep stages from wearable sensor data / wrist - worn accelerometer. The underlying model
+was trained and tested in 1000 + nights of multi - centre polysomnography with tri - axial accelerometer data.
 
-The key features of this package are as follows: 
-* A simple and easy-to-use API for sleep stage classification.
-* Sleep/wake metric estimation including total sleep duration and sleep efficiency.
-* Sleep architecture metric estimation including rapid-eye-movement(REM)/NREM sleep duration.
-
-
-![overview](./assets/figure.jpg)
+The key features of this package are as follows:
+* A simple and easy - to - use API for sleep stage classification.
+* Sleep / wake metric estimation including total sleep duration and sleep efficiency.
+* Sleep architecture metric estimation including rapid - eye - movement(REM) / NREM sleep duration.
 
 
-## Dependencies
+![overview](. / assets / figure.jpg)
+
+
+# Dependencies
 - Python 3.6+
-- Java 8 (1.8.0) or greater 
+- Java 8 (1.8.0) or greater
 ```bash
-$ java -version
+$ java - version
 ```
 
-## Installation
+# Installation
 ```bash
 $ pip install asleep
 ```
 
-## Usage
+# Usage
 ```shell
 # Process an AX3 file
 $ get_sleep sample.cwa
@@ -38,7 +38,7 @@ $ get_sleep sample.bin
 $ get_sleep sample.csv
 ```
 
-Output 
+Output
 ```shell
 Summary
 -------
@@ -59,35 +59,34 @@ Summary
 
 Estimated total sleep duration
 ---------------------
-              total sleep duration (min)
+              total sleep duration(min)
 time
-2013-10-21     435.2
-2013-10-22     436.2
-2013-10-23    432.2
+2013 - 10 - 21     435.2
+2013 - 10 - 22     436.2
+2013 - 10 - 23    432.2
 ...
 
-Output: outputs/sample/
+Output: outputs / sample/
 ```
 
-## Processing CSV files
+# Processing CSV files
 If a CSV file is provided, it must have the following header: time, x, y, z.
 
 Example:
 ```shell
-time,x,y,z
-2013-10-21 10:00:08.000,-0.078923,0.396706,0.917759
-2013-10-21 10:00:08.010,-0.094370,0.381479,0.933580
-2013-10-21 10:00:08.020,-0.094370,0.366252,0.901938
-2013-10-21 10:00:08.030,-0.078923,0.411933,0.901938
+time, x, y, z
+2013 - 10 - 21 10: 00: 08.000, -0.078923, 0.396706, 0.917759
+2013 - 10 - 21 10: 00: 08.010, -0.094370, 0.381479, 0.933580
+2013 - 10 - 21 10: 00: 08.020, -0.094370, 0.366252, 0.901938
+2013 - 10 - 21 10: 00: 08.030, -0.078923, 0.411933, 0.901938
 ```
 
 
-## Citation 
+# Citation
 If you want to use our package for your project, please cite our paper below:
-TBD 
+TBD
 
-## Acknowledgements
-We would like to thank all our code contributors, manuscript co-authors, and research participants for their help in making this work possible. The 
-data processing pipeline of this repository is based on the [step_count](https://github.com/OxWearables/stepcount#processing-csv-files) package from our group. Special 
-thanks to @chanshing for his help in developing the package.
-
+# Acknowledgements
+We would like to thank all our code contributors, manuscript co - authors, and research participants for their help in making this work possible. The
+data processing pipeline of this repository is based on the[step_count](https: // github.com / OxWearables / stepcount  # processing-csv-files) package from our group. Special
+thanks to @ chanshing for his help in developing the package.

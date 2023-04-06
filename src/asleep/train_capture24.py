@@ -15,7 +15,7 @@ We use the pre-trained model with HMM smoothing to do the classification.
 
 It will save the network weights for harnet30 and HMM.
 
-Usage: 
+Usage:
 ```
 python train_capture24.py
 ```
@@ -33,7 +33,7 @@ def load_data():
     X = X[:10000, :]
     y = y[:10000]
     pid = pid[:10000]
-    
+
     print(f'X shape: {X.shape}')
     print(f'Y shape: {y.shape}')  # same shape as pid
     print(f'Label distribution:\n{pd.Series(y).value_counts()}')
@@ -70,12 +70,11 @@ def main():
 
     my_device = 'cuda:0'
 
-    sleep_window_detector = SleepWindowSSL(device=my_device, batch_size=2000, verbose=True)
+    sleep_window_detector = SleepWindowSSL(
+        device=my_device, batch_size=2000, verbose=True)
     sleep_window_detector.fit(X, y, groups=pid)
     joblib.dump(sleep_window_detector, 'ssl.joblib.lzma', compress=('lzma', 3))
 
 
 if __name__ == '__main__':
     main()
-
-

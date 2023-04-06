@@ -9,7 +9,6 @@ import utils  # helper functions -- check out utils.py
 np.random.seed(42)
 
 
-
 def load_all_and_make_windows(datafiles, N=999):
 
     def worker(datafile):
@@ -29,6 +28,7 @@ def load_all_and_make_windows(datafiles, N=999):
 
     return X, Y, T, pid
 
+
 # ------------------------------------------
 # Process all files
 # ------------------------------------------
@@ -40,5 +40,3 @@ np.save("processed_data/X.npy", X)
 np.save("processed_data/Y.npy", Y)
 np.save("processed_data/T.npy", T)
 np.save("processed_data/pid.npy", pid)
-
-

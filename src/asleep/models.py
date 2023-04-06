@@ -49,8 +49,14 @@ class SleepWindowSSL:
         group_train = groups[train_idx]
         group_val = groups[val_idx]
 
-        train_dataset = sslmodel.NormalDataset(x_train, y_train, pid=group_train, name="training", augmentation=True)
-        val_dataset = sslmodel.NormalDataset(x_val, y_val, pid=group_val, name="validation")
+        train_dataset = sslmodel.NormalDataset(
+            x_train,
+            y_train,
+            pid=group_train,
+            name="training",
+            augmentation=True)
+        val_dataset = sslmodel.NormalDataset(
+            x_val, y_val, pid=group_val, name="validation")
 
         train_loader = DataLoader(
             train_dataset,
@@ -70,19 +76,27 @@ class SleepWindowSSL:
         model = sslmodel.get_sslnet(tag=self.repo_tag, pretrained=True)
         model.to(self.device)
 
-        sslmodel.train(model, train_loader, val_loader, self.device, class_weights, weights_path=self.weights_path)
+        sslmodel.train(
+            model,
+            train_loader,
+            val_loader,
+            self.device,
+            class_weights,
+            weights_path=self.weights_path)
         model.load_state_dict(torch.load(self.weights_path, self.device))
 
         if self.verbose:
             print('Training HMM')
 
         # train HMM with predictions of the validation set
-        y_val, y_val_pred, group_val = sslmodel.predict(model, val_loader, self.device, output_logits=True)
+        y_val, y_val_pred, group_val = sslmodel.predict(
+            model, val_loader, self.device, output_logits=True)
         y_val_pred_sf = softmax(y_val_pred, axis=1)
 
         self.hmms.fit(y_val_pred_sf, y_val, groups=group_val)
 
-        # move model to cpu to get a device-less state dict (prevents device conflicts when loading on cpu/gpu later)
+        # move model to cpu to get a device-less state dict (prevents device
+        # conflicts when loading on cpu/gpu later)
         model.to('cpu')
         self.state_dict = model.state_dict()
 
@@ -103,9 +117,9 @@ class SleepWindowSSL:
         model.load_state_dict(self.state_dict)
         model.to(self.device)
 
-        _, y_pred, _ = sslmodel.predict(model, dataloader, self.device, output_logits=False)
+        _, y_pred, _ = sslmodel.predict(
+            model, dataloader, self.device, output_logits=False)
 
         y_pred = self.hmms.predict(y_pred, groups=groups)
 
         return y_pred
-
