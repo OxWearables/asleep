@@ -122,8 +122,9 @@ def predict(model, data_loader, device, output_logits=False):
     :param nn.Module model: pytorch Module
     :param DataLoader data_loader: pytorch dataloader
     :param str device: pytorch map device
-    :param bool output_logits: When True, output the raw outputs (logits) from the last layer (before classification).
-                                When False, argmax the logits and output a classification scalar.
+    :param bool output_logits: When True, output the raw outputs (logits)
+        from the last layer (before classification).
+        When False, argmax the logits and output a classification scalar.
     :return: true labels, model predictions, pids
     :rtype: (np.ndarray, np.ndarray, np.ndarray)
     """
@@ -174,13 +175,15 @@ def train(
         patience=5):
     """
     Iterate over the training dataloader and train a pytorch model.
-    After each epoch, validate model and early stop when validation loss function bottoms out.
+    After each epoch, validate model and early stop when validation
+    loss function bottoms out.
     Trained model weights will be saved to disk (weights_path).
     :param nn.Module model: pytorch model
     :param DataLoader train_loader: training data loader
     :param DataLoader val_loader: validation data loader
     :param str device: pytorch map device
-    :param class_weights: Array of training class weights to use with weighted cross entropy loss.
+    :param class_weights: Array of training class weights to use with
+                        weighted cross entropy loss.
                         Leave empty to use unweighted loss.
     :param weights_path: save location for the trained weights (state_dict)
     :param num_epoch: number of training epochs
@@ -228,9 +231,9 @@ def train(
 
         epoch_len = len(str(num_epoch))
         print_msg = (
-            f"[{epoch:>{epoch_len}}/{num_epoch:>{epoch_len}}] | " +
-            f"train_loss: {np.mean(train_losses):.3f} | " +
-            f"train_acc: {np.mean(train_acces):.3f} | " +
+            f"[{epoch:>{epoch_len}}/{num_epoch:>{epoch_len}}] " +
+            f"train_loss: {np.mean(train_losses):.3f} " +
+            f"train_acc: {np.mean(train_acces):.3f} " +
             f"val_loss: {val_loss:.3f} | " +
             f"val_acc: {val_acc:.2f}"
         )
@@ -250,7 +253,8 @@ def train(
 
 
 def _validate_model(model, val_loader, device, loss_fn):
-    """ Iterate over a validation data loader and return mean model loss and accuracy. """
+    """ Iterate over a validation data loader and return
+        mean model loss and accuracy. """
     model.eval()
     losses = []
     acces = []

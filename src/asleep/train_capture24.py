@@ -10,7 +10,8 @@ import joblib
 """
 Run this on the GPU node 1.
 
-This script will train a binary sleep classifier using the sleep diary data from capture24.
+This script will train a binary sleep classifier
+using the sleep diary data from capture24.
 We use the pre-trained model with HMM smoothing to do the classification.
 
 It will save the network weights for harnet30 and HMM.

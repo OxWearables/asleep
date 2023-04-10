@@ -122,7 +122,12 @@ def get_sleep_windows(data2model, times, args):
     # 2.4 Extract and concatenate the sleep windows for the sleepnet
     master_acc, master_npids = get_master_df(
         all_sleep_wins_df, times, data2model)
-    return binary_y, all_sleep_wins_df, sleep_wins_long_per_day_df, master_acc, master_npids
+    return \
+        binary_y, \
+        all_sleep_wins_df, \
+        sleep_wins_long_per_day_df, \
+        master_acc, \
+        master_npids
 
 
 def main():
