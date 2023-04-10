@@ -1,0 +1,3 @@
+group_id: 0 # 0-10
+time_series_root: '/well/doherty/projects/ukb/accelerometer_processed/dec20/group${sleep.group_id}/timeSeries'
+sleep_time_root: '/well/doherty/projects/hang/processed_group${sleep.group_id}/sleep_times'

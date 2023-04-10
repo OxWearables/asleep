@@ -10,6 +10,7 @@ import joblib
 import sleep_windows as sw
 
 from utils import data_long2wide
+from sleepnet import start_sleep_net
 
 """
 How to run the script:
@@ -155,13 +156,34 @@ def main():
     # convert all_sleep_wins to a dataframe
     all_sleep_wins_df = pd.DataFrame(all_sleep_wins, columns=['start', 'end'])
 
-
     # 2.4 Extract and concatenate the sleep windows for the sleepnet
     master_acc, master_npids = get_master_df(all_sleep_wins_df, times, data2model)
 
     # 3. sleep stage classification
+    # add the option to use GPU
+    y_pred, test_pids = start_sleep_net(master_acc, master_npids, args.outdir, device_id=-1)
+    print(y_pred)
+    print(test_pids)
 
-    # 3.1 save window-specific classification results
+    # 3.1 Fill the current results back to the original dataframe
+    # set trace here
+    # import pdb; pdb.set_trace()
+
+    for block_id in range(len(all_sleep_wins_df)):
+        start_t = all_sleep_wins_df.iloc[block_id]['start']
+        end_t = all_sleep_wins_df.iloc[block_id]['end']
+
+        time_filter = (times >= start_t) & (times < end_t)
+
+        # get the corresponding sleepnet predictions
+        sleepnet_pred = y_pred[test_pids == block_id]
+
+        # fill the sleepnet predictions back to the original dataframe
+        binary_y[time_filter] = sleepnet_pred
+
+    # 3.2 TODO: add features to have wake/sleep or wake/REM/NREM label conversion
+    print(binary_y)
+
 
     # 4. save summary statistics
 

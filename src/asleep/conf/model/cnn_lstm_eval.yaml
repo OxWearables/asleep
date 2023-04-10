@@ -1,0 +1,12 @@
+deployment: false
+deployment_path: "/home/cxx579/raine/predictions"
+# eval_weight_path: "/data/UKBB/final_models/sleepnet_12_16.mdl"
+isSmall: false
+bi_lstm: True
+lstm_nn_size: 1024
+lstm_layer: 2
+batch_size: 2  # indicate the number of subjects for cnnlstm
+model_name: 'cnn_lstm'
+dropout_p: 0
+multi_task: false
+augment: 'cnn_lstm'

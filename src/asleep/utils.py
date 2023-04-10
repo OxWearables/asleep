@@ -2,10 +2,12 @@ import torch
 import random
 import numpy as np
 
+from torch.autograd import Variable
 from torch.utils.data.dataset import Dataset
 from transforms3d.axangles import axangle2mat
 from torchvision import transforms
 from scipy.interpolate import interp1d
+import math
 
 
 class RandomSwitchAxis:
@@ -253,3 +255,183 @@ def data_long2wide(X, times):
     X = np.stack((x, y, z), axis=1)
     times = times[:, 0]
     return X, times
+
+
+class cnnLSTMInFerDataset:
+    def __init__(self, X, pid=[], transform=None, target_transform=None):
+        """
+        X needs to be in N * Width
+        Pid is a numpy array of size N
+        Args:
+            data_path (string): path to data
+            files_to_load (list): subject names
+            currently all npz format should allow support multiple ext
+
+        """
+
+        self.X = torch.from_numpy(X)
+        self.pid = pid
+        self.unique_pid_list = np.unique(pid)
+        self.transform = transform
+        self.targetTransform = target_transform
+        print(len(self.unique_pid_list))
+        print("Total sample count : " + str(len(self.X)))
+
+    def __len__(self):
+        return len(self.unique_pid_list)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+        pid_of_choice = self.unique_pid_list[idx]
+        sample_filter = self.pid == pid_of_choice
+        sample = self.X[sample_filter, :]
+
+        if self.transform:
+            sample = self.transform(sample)
+        sample = torch.as_tensor(sample)
+
+        return sample, self.pid[sample_filter]
+
+
+def cnn_lstm_infer_collate(batch):
+    data = [item[0] for item in batch]
+    data = torch.cat(data)
+
+    pid = [item[1] for item in batch]
+    pid = np.concatenate(pid)
+    pid = torch.Tensor(pid)
+    return [data, pid]
+
+
+def prepare_infer_data_cnnlstm(val, my_device):
+    x = val[0]
+    pid = val[1]
+    x = Variable(x)
+
+    x = x.to(my_device, dtype=torch.float)
+    seq_lengths = get_seq_lens(pid)
+    return x, seq_lengths, pid
+
+
+
+class RandomSwitchAxisTimeSeries(object):
+    """
+    Randomly switch the three axises for the raw files
+    """
+
+    def __call__(self, sample):
+        # TIME_STEP * 3 * FEATURE_SIZE
+        x = sample[:, 0, :]
+        y = sample[:, 1, :]
+        z = sample[:, 2, :]
+
+        choice = random.randint(1, 6)
+        if choice == 1:
+            sample = torch.stack([x, y, z], dim=1)
+        elif choice == 2:
+            sample = torch.stack([x, z, y], dim=1)
+        elif choice == 3:
+            sample = torch.stack([y, x, z], dim=1)
+        elif choice == 4:
+            sample = torch.stack([y, z, x], dim=1)
+        elif choice == 5:
+            sample = torch.stack([z, x, y], dim=1)
+        elif choice == 6:
+            sample = torch.stack([z, y, x], dim=1)
+        return sample
+
+
+class RotationAxisTimeSeries(object):
+    """
+    Every sample belongs to one subject
+    Rotation along an axis
+    """
+
+    def __call__(self, sample):
+        # TIME_STEP * 3 * FEATURE_SIZE
+        axis = np.random.uniform(low=-1, high=1, size=sample.shape[1])
+        angle = np.random.uniform(low=-np.pi, high=np.pi)
+        sample = np.swapaxes(sample, 1, 2)
+        sample = np.matmul(sample, axangle2mat(axis, angle))
+        sample = np.swapaxes(sample, 1, 2)
+        return sample
+
+
+class Permutation_TimeSeries(object):
+    """
+    Rearrange certain segments of the data
+    """
+
+    def __call__(self, sample):
+        # TIME_STEP * 3 * FEATURE_SIZE
+        sample = np.swapaxes(sample, 1, 2)
+        # MIN one segment
+        sample = np.array(
+            [
+                DA_Permutation(xi, nPerm=max(math.ceil(np.random.normal(2, 5)), 1))
+                for xi in sample
+            ]
+        )
+
+        sample = np.swapaxes(sample, 1, 2)
+        sample = torch.tensor(sample)
+        return sample
+
+
+def get_seq_lens(pid_list):
+    lens = np.where(pid_list[:-1] != pid_list[1:])[0]
+    lens = np.concatenate((lens, [len(pid_list) - 1]))
+    seq_lengths = []
+    pre_len = -1
+    for my_len in lens:
+        seq_lengths.append(my_len - pre_len)
+        pre_len = my_len
+
+    return torch.LongTensor(seq_lengths)
+
+
+# Taken from https://github.com/terryum/Data-Augmentation-For-Wearable-Sensor-Data
+def DA_Permutation(X, nPerm=4, minSegLength=10):
+    X_new = np.zeros(X.shape)
+    idx = np.random.permutation(nPerm)
+    bWhile = True
+    while bWhile is True:
+        segs = np.zeros(nPerm + 1, dtype=int)
+        segs[1:-1] = np.sort(
+            np.random.randint(minSegLength, X.shape[0] - minSegLength, nPerm - 1)
+        )
+        segs[-1] = X.shape[0]
+        if np.min(segs[1:] - segs[0:-1]) > minSegLength:
+            bWhile = False
+    pp = 0
+    for ii in range(nPerm):
+        x_temp = X[segs[idx[ii]] : segs[idx[ii] + 1], :]
+        X_new[pp : pp + len(x_temp), :] = x_temp
+        pp += len(x_temp)
+    return X_new
+
+class ClampTrans(object):
+    """
+    Randomly switch the three axises for the raw files
+    """
+
+    def __call__(self, sample):
+        max_abs_val = 3
+        sample = torch.clamp(sample, min=-max_abs_val, max=max_abs_val)
+        return sample
+
+
+def setup_transforms(augment_mode, is_train):
+    my_transform = ClampTrans()
+    if augment_mode == "cnn_lstm" and is_train:
+        my_transform = transforms.Compose(
+            [
+                RandomSwitchAxisTimeSeries(),
+                RotationAxisTimeSeries(),
+                Permutation_TimeSeries(),
+                ClampTrans(),
+            ]
+        )
+    return my_transform
+
