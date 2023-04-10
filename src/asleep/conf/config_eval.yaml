@@ -1,0 +1,15 @@
+defaults:
+  - model: cnn_lstm_eval
+  - data: deployment
+  - _self_
+
+gpu: -1
+num_epoch: 200
+multi_gpu: false
+gpu_ids: [0, 1, 2, 3]  # if more than one gpu
+verbose: false
+patience: 10
+deployment: true
+num_split: 5
+test_size: 0.2
+validation_fold: -1 # validation fold < num_split used for cnn cv

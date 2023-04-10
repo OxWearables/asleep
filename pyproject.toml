@@ -114,7 +114,8 @@ dependencies = [ # Optional
   "torch",
   "torchvision",
   "transforms3d",
-  "stepcount"
+  "stepcount",
+  "hydra-core",
 ]
 
 # List additional groups of dependencies here (e.g. development

@@ -27,7 +27,8 @@ def find_sleep_blocks(interval_counter):
 
 def find_block_duration(sleep_df):
     # Find sleep duration for each block
-    # Return: Counter: n x 3: each row has block class, block length and the block starting idx
+    # Return: Counter: n x 3: each row has block class, block length and the
+    # block starting idx
     block_lengths = [
         (x[0], len(list(x[1]))) for x in itertools.groupby(sleep_df["label"])
     ]   # contains (class, block_len)
@@ -95,7 +96,8 @@ def find_sleep_windows(sleep_blocks):
         else:
             pre_class = win[CLASS_POS]
             if current_start_master_idx != -1:
-                all_sleep_blocks.append([current_start_master_idx, current_end_master_idx])
+                all_sleep_blocks.append(
+                    [current_start_master_idx, current_end_master_idx])
             continue
         pre_class = win[CLASS_POS]
 
@@ -107,7 +109,8 @@ def find_sleep_windows(sleep_blocks):
             res_start_master_idx = current_start_master_idx
 
     if pre_class == IS_SLEEP_FLAG and current_start_master_idx != -1:
-        all_sleep_blocks.append([current_start_master_idx, current_end_master_idx])
+        all_sleep_blocks.append(
+            [current_start_master_idx, current_end_master_idx])
 
     return all_sleep_blocks, res_start_master_idx, res_end_master_idx
 
@@ -119,14 +122,15 @@ def get_sleep_blocks(interval_df):
     sleep_win_counter = fill_sleep_block_gaps(sleep_block_idxes, counter)
 
     # return the start_idx and end_idx for each sleep window
-    all_sleep_idxes, long_start_idx, long_end_idx = find_sleep_windows(sleep_win_counter)
+    all_sleep_idxes, long_start_idx, long_end_idx = find_sleep_windows(
+        sleep_win_counter)
 
     sleep_wins = []
     for idx_pair in all_sleep_idxes:
         start_idx = idx_pair[0]
         end_idx = idx_pair[1]
         sleep_wins.append([interval_df.iloc[[start_idx]]["time"].item(),
-                           interval_df.iloc[[end_idx-1]]["time"].item()])
+                           interval_df.iloc[[end_idx - 1]]["time"].item()])
 
     start_sleep = interval_df.iloc[[long_start_idx]]["time"].item()
     end_sleep = interval_df.iloc[[long_end_idx - 1]]["time"].item()
@@ -167,7 +171,8 @@ def time_series2sleep_blocks(
     print(start_date)
     print(end_date)
     my_intervals = get_day_intervals(start_date, end_date, date_format)
-    all_sleep_wins, sleep_wins_long = get_sleep_blocks_per_day(my_df, my_intervals)
+    all_sleep_wins, sleep_wins_long = get_sleep_blocks_per_day(
+        my_df, my_intervals)
     return all_sleep_wins, sleep_wins_long
 
 
@@ -178,11 +183,11 @@ def get_day_intervals(start_date, end_date, date_format):
     day_intervals = []
     day_end_str = "1990-01-01 09:47:50.439000"
     my_day_end = pd.to_datetime(day_end_str, format=date_format)
-    my_day_start = start_date.replace(hour=12, minute=0, second=0, microsecond=0)
+    my_day_start = start_date.replace(
+        hour=12, minute=0, second=0, microsecond=0)
 
     while my_day_end < end_date:
         my_day_end = my_day_start + timedelta(hours=23, minutes=59, seconds=59)
         day_intervals.append([my_day_start, my_day_end])
         my_day_start = my_day_start + timedelta(hours=24)
     return day_intervals
-

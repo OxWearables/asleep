@@ -18,3 +18,5 @@ outputs
 src/asleep/torch_hub_cache
 assets/*.joblib.*
 *.ipynb_checkpoints
+*.ipynb
+src/asleep/models

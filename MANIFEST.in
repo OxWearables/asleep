@@ -1,3 +1,6 @@
 include tox.ini
 recursive-include tests *.py
-recursive-include assets *.jpg
+recursive-include assets *.jpg *.lzma
+recursive-include src *.yaml
+exclude src/asleep/models *.mdl
+recursive-exclude src/asleep/torch_hub_cache *

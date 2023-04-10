@@ -24,6 +24,8 @@ $ pip install asleep
 ```
 
 # Usage
+All the processing will be much faster after the first time because the model weights will to have to be downloaded
+the first time that the package is used.
 ```shell
 # Process an AX3 file
 $ get_sleep sample.cwa
@@ -88,5 +90,5 @@ TBD
 
 # Acknowledgements
 We would like to thank all our code contributors, manuscript co - authors, and research participants for their help in making this work possible. The
-data processing pipeline of this repository is based on the[step_count](https: // github.com / OxWearables / stepcount  # processing-csv-files) package from our group. Special
-thanks to @ chanshing for his help in developing the package.
+data processing pipeline of this repository is based on the [step_count](https://github.com/OxWearables/stepcount) package from our group. Special
+thanks to @chanshing for his help in developing the package.
