@@ -2,3 +2,5 @@ include tox.ini
 recursive-include tests *.py
 recursive-include assets *.jpg
 recursive-include src *.yaml
+exclude src/asleep/models/*
+exclude src/asleep/torch_hub_cache/*

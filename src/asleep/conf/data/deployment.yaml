@@ -1,0 +1,16 @@
+data_root: /Users/hangy/data
+X_zip_path: "${data.data_root}/X.npy.gz"
+X_path: "${data.data_root}/X.npy"
+PID_path: "${data.data_root}/npid.npy"
+subject_file: ""
+y_pred_path: "${data.data_root}/y_pred.npy"
+y_prob_path: "${data.data_root}/pred_prob.npy"
+pid_pred_path: "${data.data_root}/PID_pred.npy"
+use_gen2: False
+context_path: "${data.data_root}/context.pkl"
+log_path: /home/cxx579/raine/logs
+win_length: 1
+meta_data_size: 0
+test_ratio: 0.2
+val_ratio: 0.2
+num_classes: 5
