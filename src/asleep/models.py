@@ -199,8 +199,6 @@ class SleepWindowSSL:
         return y_pred
 
 
-
-
 class Resnet(nn.Module):
     r""" The general form of the architecture can be described as follows:
 
@@ -329,6 +327,7 @@ class Resnet(nn.Module):
 
         return feats
 
+
 class ResBlock(nn.Module):
     r""" Basic bulding block in Resnets:
 
@@ -338,7 +337,8 @@ class ResBlock(nn.Module):
 
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size=5, stride=1, padding=2):
+    def __init__(self, in_channels, out_channels,
+                 kernel_size=5, stride=1, padding=2):
         super(ResBlock, self).__init__()
 
         self.bn1 = nn.BatchNorm1d(in_channels)
@@ -407,7 +407,8 @@ class Downsample(nn.Module):
             kernel = np.convolve(kernel, box_kernel)
         kernel /= np.sum(kernel)
         kernel = torch.Tensor(kernel)
-        self.register_buffer("kernel", kernel[None, None, :].repeat((channels, 1, 1)))
+        self.register_buffer(
+            "kernel", kernel[None, None, :].repeat((channels, 1, 1)))
 
     def forward(self, x):
         return F.conv1d(
@@ -498,9 +499,10 @@ class CNNLSTM(nn.Module):
         for i in range(len(seq_lengths)):
             current_len = seq_lengths[i]
             current_series = x[
-                start_idx : start_idx + current_len, :
+                start_idx: start_idx + current_len, :
             ]  # num_time_step x feature_size
-            current_series = current_series.view(1, current_series.size()[0], -1)
+            current_series = current_series.view(
+                1, current_series.size()[0], -1)
 
             seq_tensor[i, :current_len, :] = current_series
             start_idx += current_len
@@ -511,8 +513,9 @@ class CNNLSTM(nn.Module):
             seq_tensor, seq_lengths_ordered.cpu().numpy(), batch_first=True
         )
 
-        packed_output, (hidden, cell) = self.lstm(packed_input)
-        output, input_sizes = pad_packed_sequence(packed_output, batch_first=True)
+        packed_output, (_, _) = self.lstm(packed_input)
+        output, input_sizes = pad_packed_sequence(
+            packed_output, batch_first=True)
 
         # reverse back to the original order
         _, unperm_idx = perm_idx.sort(0)
@@ -534,7 +537,7 @@ class CNNLSTM(nn.Module):
                 i, :current_len, :
             ]  # num_time_step x feature_size
             current_series = current_series.view(current_len, -1)
-            fc_tensor[start_idx : start_idx + current_len, :] = current_series
+            fc_tensor[start_idx: start_idx + current_len, :] = current_series
             start_idx += current_len
 
         # 3. linear readout

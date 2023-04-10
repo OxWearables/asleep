@@ -2,14 +2,12 @@ import pathlib
 import argparse
 import numpy as np
 import pandas as pd
-import scipy.stats as stats
-import actipy
 import json
 import os
 import joblib
 import sleep_windows as sw
 
-from utils import data_long2wide
+from utils import data_long2wide, read, NpEncoder
 from sleepnet import start_sleep_net
 
 """
@@ -22,40 +20,7 @@ python src/asleep/get_sleep.py data/test.bin
 """
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="A tool to estimate sleep stages from accelerometer data",
-        add_help=True
-    )
-    parser.add_argument("filepath", help="Enter file to be processed")
-    parser.add_argument(
-        "--outdir",
-        "-o",
-        help="Enter folder location to save output files",
-        default="outputs/")
-    parser.add_argument(
-        "--force_download",
-        action="store_true",
-        help="Force download of model file")
-    parser.add_argument(
-        "--force_run",
-        action="store_true",
-        help="asleep package won't rerun the analysis to save "
-        "time. force_run will make sure everything is "
-        "regenerated")
-    parser.add_argument(
-        "--pytorch_device",
-        "-d",
-        help="Pytorch device to use, e.g.: 'cpu' or 'cuda:0' (for SSL only)",
-        type=str,
-        default='cpu')
-    args = parser.parse_args()
-
-    # 1. Parse raw files into a dataframe
-    resample_hz = 30
-    raw_data_path = os.path.join(args.outdir, 'raw.csv')
-    info_data_path = os.path.join(args.outdir, 'info.json')
-
+def get_parsed_data(raw_data_path, info_data_path, resample_hz, args):
     if os.path.exists(raw_data_path) is False or os.path.exists(
             info_data_path) is False or args.force_run is True:
         data, info = read(args.filepath, resample_hz)
@@ -73,8 +38,10 @@ def main():
         with open(info_data_path, 'r') as f:
             info = json.load(f)
     print(data.head())
+    return data, info
 
-    # 1.1 Transform data into a usable format for inference
+
+def transform_data2model_input(data2model_path, times_path, data, args):
     """
     Current:
                                    x         y         z
@@ -86,10 +53,6 @@ def main():
     times array: 1 x N
     data array: N x 3 x 900 (30 seconds of data at 30Hz)
     """
-
-    # TODO: refactor the saving and loading functions
-    data2model_path = os.path.join(args.outdir, 'data2model.npy')
-    times_path = os.path.join(args.outdir, 'times.npy')
     if os.path.exists(data2model_path) is False or os.path.exists(
             times_path) is False or args.force_run is True:
         times = data.time.to_numpy()
@@ -114,13 +77,10 @@ def main():
               "Skip data transformation.")
         data2model = np.load(data2model_path)
         times = np.load(times_path)
+    return data2model, times
 
-    # print data2model shape info
-    print("data2model shape: {}".format(data2model.shape))
-    print("times shape: {}".format(times.shape))
 
-    # 2. sleep window detection
-    # 2.1 Sleep wake classification using SSL
+def get_sleep_windows(data2model, times, args):
     ssl_sleep_path = os.path.join(args.outdir, 'ssl_sleep.npy')
     if os.path.exists(ssl_sleep_path) is False or args.force_run is True:
         sleep_window_detector = joblib.load('assets/ssl.joblib.lzma')
@@ -134,9 +94,9 @@ def main():
     else:
         window_pred = np.load(ssl_sleep_path)
 
-    ## Testing plan
-    ## TODO: Create visu tool to visualize the results
-    ## TODO 2.2 Window correction for false negative
+    # Testing plan
+    # TODO: Create visu tool to visualize the results
+    # TODO 2.2 Window correction for false negative
 
     # 2.3 Sleep window identification
     SLEEPNET_LABELS = {
@@ -151,23 +111,73 @@ def main():
         'label': binary_y
     }
     my_df = pd.DataFrame(my_data)
-    all_sleep_wins, sleep_wins_long_per_day = sw.time_series2sleep_blocks(my_df)
+    all_sleep_wins, sleep_wins_long_per_day = sw.time_series2sleep_blocks(
+        my_df)
 
     # convert all_sleep_wins to a dataframe
     all_sleep_wins_df = pd.DataFrame(all_sleep_wins, columns=['start', 'end'])
+    sleep_wins_long_per_day_df = pd.DataFrame(
+        sleep_wins_long_per_day, columns=['start', 'end'])
 
     # 2.4 Extract and concatenate the sleep windows for the sleepnet
-    master_acc, master_npids = get_master_df(all_sleep_wins_df, times, data2model)
+    master_acc, master_npids = get_master_df(
+        all_sleep_wins_df, times, data2model)
+    return binary_y, all_sleep_wins_df, sleep_wins_long_per_day_df, master_acc, master_npids
 
-    # 3. sleep stage classification
-    # add the option to use GPU
-    y_pred, test_pids = start_sleep_net(master_acc, master_npids, args.outdir, device_id=-1)
-    print(y_pred)
-    print(test_pids)
 
-    # 3.1 Fill the current results back to the original dataframe
-    # set trace here
-    # import pdb; pdb.set_trace()
+def main():
+    parser = argparse.ArgumentParser(
+        description="A tool to estimate sleep stages from accelerometer data",
+        add_help=True
+    )
+    parser.add_argument("filepath", help="Enter file to be processed")
+    parser.add_argument(
+        "--outdir",
+        "-o",
+        help="Enter folder location to save output files",
+        default="outputs/")
+    parser.add_argument(
+        "--force_download",
+        action="store_true",
+        help="Force download of model file")
+    parser.add_argument(
+        "--force_run",
+        action="store_true",
+        help="asleep package won't rerun the analysis to save "
+             "time. force_run will make sure everything is "
+             "regenerated")
+    parser.add_argument(
+        "--pytorch_device",
+        "-d",
+        help="Pytorch device to use, e.g.: 'cpu' or 'cuda:0' (for SSL only)",
+        type=str,
+        default='cpu')
+    args = parser.parse_args()
+
+    resample_hz = 30
+    raw_data_path = os.path.join(args.outdir, 'raw.csv')
+    info_data_path = os.path.join(args.outdir, 'info.json')
+    data2model_path = os.path.join(args.outdir, 'data2model.npy')
+    times_path = os.path.join(args.outdir, 'times.npy')
+
+    # 1. Parse raw files into a dataframe
+    data, info = get_parsed_data(
+        raw_data_path, info_data_path, resample_hz, args)
+    print(data.head())
+
+    # 1.1 Transform data into a usable format for inference
+    # TODO: refactor the saving and loading functions
+    data2model, times = transform_data2model_input(
+        data2model_path, times_path, data, args)
+    print("data2model shape: {}".format(data2model.shape))
+    print("times shape: {}".format(times.shape))
+
+    # 2. sleep window detection and inference
+    (binary_y, all_sleep_wins_df,
+     sleep_wins_long_per_day_df,
+     master_acc, master_npids) = get_sleep_windows(data2model, times, args)
+
+    y_pred, test_pids = start_sleep_net(master_acc, master_npids)
 
     for block_id in range(len(all_sleep_wins_df)):
         start_t = all_sleep_wins_df.iloc[block_id]['start']
@@ -181,9 +191,8 @@ def main():
         # fill the sleepnet predictions back to the original dataframe
         binary_y[time_filter] = sleepnet_pred
 
-    # 3.2 TODO: add features to have wake/sleep or wake/REM/NREM label conversion
+    # 3.2 TODO: add features to have wake/sleep or wake/REM/NREM label
     print(binary_y)
-
 
     # 4. save summary statistics
 
@@ -210,78 +219,6 @@ def get_master_df(block_time_df, times, acc_array):
             master_npids = np.concatenate((master_npids, day_pid))
 
     return master_acc, master_npids
-
-
-class NpEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        if isinstance(obj, np.floating):
-            return float(obj)
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return json.JSONEncoder.default(self, obj)
-
-
-def infer_freq(x):
-    """ Like pd.infer_freq but more forgiving """
-    freq, _ = stats.mode(np.diff(x), keepdims=False)
-    freq = pd.Timedelta(freq)
-    return freq
-
-
-def read(filepath, resample_hz='uniform'):
-    p = pathlib.Path(filepath)
-    ftype = p.suffixes[0].lower()
-    fsize = round(p.stat().st_size / (1024 * 1024), 1)
-
-    if ftype in (".csv", ".pkl"):
-
-        if ftype == ".csv":
-            data = pd.read_csv(
-                filepath,
-                usecols=['time', 'x', 'y', 'z'],
-                parse_dates=['time'],
-                index_col='time'
-            )
-        elif ftype == ".pkl":
-            data = pd.read_pickle(filepath)
-        else:
-            raise ValueError(f"Unknown file format: {ftype}")
-
-        freq = infer_freq(data.index)
-        sample_rate = int(np.round(pd.Timedelta('1s') / freq))
-
-        data, info = actipy.process(
-            data, sample_rate,
-            lowpass_hz=None,
-            calibrate_gravity=True,
-            detect_nonwear=True,
-            resample_hz=resample_hz,
-        )
-
-        info = {
-            **{"Filename": filepath,
-               "Device": ftype,
-               "Filesize(MB)": fsize,
-               "SampleRate": sample_rate},
-            **info
-        }
-
-    elif ftype in (".cwa", ".gt3x", ".bin"):
-
-        data, info = actipy.read_device(
-            filepath,
-            lowpass_hz=None,
-            calibrate_gravity=True,
-            detect_nonwear=True,
-            resample_hz=resample_hz,
-        )
-
-    if 'ResampleRate' not in info:
-        info['ResampleRate'] = info['SampleRate']
-
-    return data, info
 
 
 if __name__ == '__main__':

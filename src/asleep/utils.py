@@ -1,13 +1,89 @@
 import torch
 import random
 import numpy as np
-
+import scipy.stats as stats
+import actipy
+import pandas as pd
+import pathlib
 from torch.autograd import Variable
 from torch.utils.data.dataset import Dataset
 from transforms3d.axangles import axangle2mat
 from torchvision import transforms
 from scipy.interpolate import interp1d
 import math
+import json
+
+
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
+
+def infer_freq(x):
+    """ Like pd.infer_freq but more forgiving """
+    freq, _ = stats.mode(np.diff(x), keepdims=False)
+    freq = pd.Timedelta(freq)
+    return freq
+
+
+def read(filepath, resample_hz='uniform'):
+    p = pathlib.Path(filepath)
+    ftype = p.suffixes[0].lower()
+    fsize = round(p.stat().st_size / (1024 * 1024), 1)
+
+    if ftype in (".csv", ".pkl"):
+
+        if ftype == ".csv":
+            data = pd.read_csv(
+                filepath,
+                usecols=['time', 'x', 'y', 'z'],
+                parse_dates=['time'],
+                index_col='time'
+            )
+        elif ftype == ".pkl":
+            data = pd.read_pickle(filepath)
+        else:
+            raise ValueError(f"Unknown file format: {ftype}")
+
+        freq = infer_freq(data.index)
+        sample_rate = int(np.round(pd.Timedelta('1s') / freq))
+
+        data, info = actipy.process(
+            data, sample_rate,
+            lowpass_hz=None,
+            calibrate_gravity=True,
+            detect_nonwear=True,
+            resample_hz=resample_hz,
+        )
+
+        info = {
+            **{"Filename": filepath,
+               "Device": ftype,
+               "Filesize(MB)": fsize,
+               "SampleRate": sample_rate},
+            **info
+        }
+
+    elif ftype in (".cwa", ".gt3x", ".bin"):
+
+        data, info = actipy.read_device(
+            filepath,
+            lowpass_hz=None,
+            calibrate_gravity=True,
+            detect_nonwear=True,
+            resample_hz=resample_hz,
+        )
+
+    if 'ResampleRate' not in info:
+        info['ResampleRate'] = info['SampleRate']
+
+    return data, info
 
 
 class RandomSwitchAxis:
@@ -314,7 +390,6 @@ def prepare_infer_data_cnnlstm(val, my_device):
     return x, seq_lengths, pid
 
 
-
 class RandomSwitchAxisTimeSeries(object):
     """
     Randomly switch the three axises for the raw files
@@ -369,7 +444,11 @@ class Permutation_TimeSeries(object):
         # MIN one segment
         sample = np.array(
             [
-                DA_Permutation(xi, nPerm=max(math.ceil(np.random.normal(2, 5)), 1))
+                DA_Permutation(
+                    xi, nPerm=max(
+                        math.ceil(
+                            np.random.normal(
+                                2, 5)), 1))
                 for xi in sample
             ]
         )
@@ -391,7 +470,8 @@ def get_seq_lens(pid_list):
     return torch.LongTensor(seq_lengths)
 
 
-# Taken from https://github.com/terryum/Data-Augmentation-For-Wearable-Sensor-Data
+# Taken from
+# https://github.com/terryum/Data-Augmentation-For-Wearable-Sensor-Data
 def DA_Permutation(X, nPerm=4, minSegLength=10):
     X_new = np.zeros(X.shape)
     idx = np.random.permutation(nPerm)
@@ -399,17 +479,21 @@ def DA_Permutation(X, nPerm=4, minSegLength=10):
     while bWhile is True:
         segs = np.zeros(nPerm + 1, dtype=int)
         segs[1:-1] = np.sort(
-            np.random.randint(minSegLength, X.shape[0] - minSegLength, nPerm - 1)
+            np.random.randint(
+                minSegLength,
+                X.shape[0] - minSegLength,
+                nPerm - 1)
         )
         segs[-1] = X.shape[0]
         if np.min(segs[1:] - segs[0:-1]) > minSegLength:
             bWhile = False
     pp = 0
     for ii in range(nPerm):
-        x_temp = X[segs[idx[ii]] : segs[idx[ii] + 1], :]
-        X_new[pp : pp + len(x_temp), :] = x_temp
+        x_temp = X[segs[idx[ii]]: segs[idx[ii] + 1], :]
+        X_new[pp: pp + len(x_temp), :] = x_temp
         pp += len(x_temp)
     return X_new
+
 
 class ClampTrans(object):
     """
@@ -434,4 +518,3 @@ def setup_transforms(augment_mode, is_train):
             ]
         )
     return my_transform
-

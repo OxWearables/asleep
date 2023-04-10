@@ -160,9 +160,9 @@ def sleepnet_inference(X, pid, cfg):
     model = setup_cnn(cfg, my_device)
     test_loader = setup_dataset(X, pid, cfg)
 
-    test_y_pred, test_pid, test_probs = forward_batches(model, test_loader, my_device)
+    test_y_pred, test_pid, test_probs = forward_batches(
+        model, test_loader, my_device)
     end = time.time()
-
 
     # realign output
     aligned_y_pred = align_output(test_y_pred, pid, test_pid)
