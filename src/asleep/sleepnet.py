@@ -8,7 +8,6 @@ import gzip
 import os.path
 
 # Model utils
-from models import weight_init, CNNLSTM
 from utils import cnnLSTMInFerDataset, cnn_lstm_infer_collate, prepare_infer_data_cnnlstm, setup_transforms
 
 # Torch
@@ -102,29 +101,18 @@ def config_device(cfg):
 
 
 def setup_cnn(cfg, my_device):
-
-    model = CNNLSTM(
-        num_classes=cfg.data.num_classes,
-        model_device=my_device,
-        lstm_nn_size=cfg.model.lstm_nn_size,
-        dropout_p=cfg.model.dropout_p,
-        bidrectional=cfg.model.bi_lstm,
-        lstm_layer=cfg.model.lstm_layer,
-    )
-    weight_init(model)
-
-    if cfg.deployment:
-        print("loading weights..")
-        weight_path = os.path.join(my_abs_path, "models", "bi_sleepnet.mdl")
-        assert os.path.exists(weight_path)
-        print("Loading weights from %s " % weight_path)
-
-        model.load_state_dict(
-            torch.load(weight_path, map_location=torch.device(my_device))
-        )
+    repo = 'OxWearables/asleep'
+    model = torch.hub.load(repo,
+                           'sleepnet',
+                           num_classes=cfg.data.num_classes,
+                           my_device=my_device,
+                           lstm_nn_size=cfg.model.lstm_nn_size,
+                           dropout_p=cfg.model.dropout_p,
+                           bi_lstm=cfg.model.bi_lstm,
+                           lstm_layer=cfg.model.lstm_layer,
+                           )
 
     model.to(my_device, dtype=torch.float)
-
     return model
 
 
