@@ -152,11 +152,42 @@ def main():
     my_df = pd.DataFrame(my_data)
     all_sleep_wins, sleep_wins_long_per_day = sw.time_series2sleep_blocks(my_df)
 
+    # convert all_sleep_wins to a dataframe
+    all_sleep_wins_df = pd.DataFrame(all_sleep_wins, columns=['start', 'end'])
+
+
+    # 2.4 Extract and concatenate the sleep windows for the sleepnet
+    master_acc, master_npids = get_master_df(all_sleep_wins_df, times, data2model)
+
     # 3. sleep stage classification
 
     # 3.1 save window-specific classification results
 
     # 4. save summary statistics
+
+
+def get_master_df(block_time_df, times, acc_array):
+    # extract interval based on times
+    master_acc = []
+    master_npids = []  # night ids
+
+    for index, row in block_time_df.iterrows():
+        start_t = row["start"]
+        end_t = row["end"]
+
+        time_filter = (times >= start_t) & (times < end_t)
+        current_day_acc = acc_array[time_filter]
+
+        day_pid = np.ones(np.sum(time_filter)) * index
+
+        if len(master_npids) == 0:
+            master_acc = current_day_acc
+            master_npids = day_pid
+        else:
+            master_acc = np.concatenate((master_acc, current_day_acc))
+            master_npids = np.concatenate((master_npids, day_pid))
+
+    return master_acc, master_npids
 
 
 class NpEncoder(json.JSONEncoder):
