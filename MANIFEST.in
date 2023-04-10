@@ -1,3 +1,4 @@
 include tox.ini
 recursive-include tests *.py
 recursive-include assets *.jpg
+recursive-include src *.yaml

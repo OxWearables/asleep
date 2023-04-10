@@ -177,7 +177,7 @@ def main():
      sleep_wins_long_per_day_df,
      master_acc, master_npids) = get_sleep_windows(data2model, times, args)
 
-    y_pred, test_pids = start_sleep_net(master_acc, master_npids)
+    y_pred, test_pids = start_sleep_net(master_acc, master_npids, args.outdir)
 
     for block_id in range(len(all_sleep_wins_df)):
         start_t = all_sleep_wins_df.iloc[block_id]['start']
