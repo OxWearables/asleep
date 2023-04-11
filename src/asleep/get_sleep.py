@@ -9,6 +9,7 @@ import joblib
 import asleep.sleep_windows as sw
 from asleep.utils import data_long2wide, read, NpEncoder
 from asleep.sleepnet import start_sleep_net
+from asleep.macros import SLEEPNET_LABELS, SLEEPNET_BINARY_LABELS, SLEEPNET_THRE_CLASS_LABELS
 
 """
 How to run the script:
@@ -99,12 +100,6 @@ def get_sleep_windows(data2model, times, args):
     # TODO 2.2 Window correction for false negative
 
     # 2.3 Sleep window identification
-    SLEEPNET_LABELS = {
-        0: 0,
-        1: 0,
-        2: 0,
-        3: 1,
-    }
     binary_y = np.vectorize(SLEEPNET_LABELS.get)(window_pred)
     my_data = {
         'time': times,
@@ -166,6 +161,7 @@ def main():
     times_path = os.path.join(args.outdir, 'times.npy')
 
     # 1. Parse raw files into a dataframe
+    # Add non-wear detection
     data, info = get_parsed_data(
         raw_data_path, info_data_path, resample_hz, args)
     print(data.head())
@@ -183,6 +179,7 @@ def main():
      master_acc, master_npids) = get_sleep_windows(data2model, times, args)
 
     y_pred, test_pids = start_sleep_net(master_acc, master_npids, args.outdir)
+    sleepnet_output = binary_y
 
     for block_id in range(len(all_sleep_wins_df)):
         start_t = all_sleep_wins_df.iloc[block_id]['start']
@@ -194,12 +191,48 @@ def main():
         sleepnet_pred = y_pred[test_pids == block_id]
 
         # fill the sleepnet predictions back to the original dataframe
-        binary_y[time_filter] = sleepnet_pred
+        sleepnet_output[time_filter] = sleepnet_pred
 
-    # 3.2 TODO: add features to have wake/sleep or wake/REM/NREM label
-    print(binary_y)
+    ## 3. Skip this step if predictions already exist
+    # Output pandas dataframe
+    # Times, Sleep/Wake, Sleep Stage
+    sleep_wake_predictions = np.vectorize(SLEEPNET_BINARY_LABELS.get)(sleepnet_output)
+    sleep_stage_predictions = np.vectorize(SLEEPNET_THRE_CLASS_LABELS.get)(sleepnet_output)
+
+    predictions_df = pd.DataFrame(
+        {
+            'time': times,
+            'sleep_wake': sleep_wake_predictions,
+            'sleep_stage': sleep_stage_predictions,
+            'raw_label': sleepnet_output,
+        }
+    )
+    final_prediction_path = os.path.join(args.outdir, 'predictions.csv')
+    print("predictions_df shape: {}".format(predictions_df.shape))
+    print(predictions_df.head())
+    print("Predictions saved to: {}".format(final_prediction_path))
+    predictions_df.to_csv(final_prediction_path, index=False)
+
 
     # 4. save summary statistics
+    ## 4.1 Generate sleep block df and indicate the longest block per day
+    ## time start, time end, is longest block
+    all_sleep_wins_df['is_longest_block'] = False
+    for index, row in sleep_wins_long_per_day_df.iterrows():
+        start_t = row['start']
+        end_t = row['end']
+        all_sleep_wins_df.loc[
+            (all_sleep_wins_df['start'] == start_t) &
+            (all_sleep_wins_df['end'] == end_t),
+            'is_longest_block'] = True
+    sleep_block_path = os.path.join(args.outdir, 'sleep_block.csv')
+    print(all_sleep_wins_df.head())
+    print("Sleep block saved to: {}".format(sleep_block_path))
+    all_sleep_wins_df.to_csv(sleep_block_path, index=False)
+
+
+    ## 4.2  overnight averages
+    ## TODO: hourly, daily, weekday, weekend,
 
 
 def get_master_df(block_time_df, times, acc_array):

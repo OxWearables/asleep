@@ -6,6 +6,7 @@ import unittest
 
 from asleep.simple import add_one
 
+
 class TestSimple(unittest.TestCase):
 
     def test_add_one(self):
