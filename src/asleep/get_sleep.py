@@ -5,10 +5,10 @@ import pandas as pd
 import json
 import os
 import joblib
-import sleep_windows as sw
 
-from utils import data_long2wide, read, NpEncoder
-from sleepnet import start_sleep_net
+import asleep.sleep_windows as sw
+from asleep.utils import data_long2wide, read, NpEncoder
+from asleep.sleepnet import start_sleep_net
 
 """
 How to run the script:
