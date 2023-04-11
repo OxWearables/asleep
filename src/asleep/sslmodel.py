@@ -7,8 +7,7 @@ from pathlib import Path
 from tqdm import tqdm
 from torchvision import transforms
 from torch.utils.data.dataset import Dataset
-from torch.utils.data import DataLoader
-from utils import EarlyStopping, RandomSwitchAxis, RotationAxis
+from asleep.utils import EarlyStopping, RandomSwitchAxis, RotationAxis
 
 
 verbose = False
@@ -231,10 +230,10 @@ def train(
 
         epoch_len = len(str(num_epoch))
         print_msg = (
-            f"[{epoch:>{epoch_len}}/{num_epoch:>{epoch_len}}] " +
-            f"train_loss: {np.mean(train_losses):.3f} " +
-            f"train_acc: {np.mean(train_acces):.3f} " +
-            f"val_loss: {val_loss:.3f} | " +
+            f"[{epoch:>{epoch_len}}/{num_epoch:>{epoch_len}}] ",
+            f"train_loss: {np.mean(train_losses):.3f} ",
+            f"train_acc: {np.mean(train_acces):.3f} ",
+            f"val_loss: {val_loss:.3f} | ",
             f"val_acc: {val_acc:.2f}"
         )
 

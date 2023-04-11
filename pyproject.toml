@@ -148,7 +148,7 @@ test = ["coverage"]
 # The following would provide a command line executable called `sample`
 # which executes the function `main` from this package when invoked.
 #[project.scripts]  # Optional
-#sample = "sample:main"
+#get_sleep = "asleep:get_sleep"
 
 # This is configuration specific to the `setuptools` build backend.
 # If you are using a different build backend, you will need to change this.

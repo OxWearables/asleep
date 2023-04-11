@@ -1,16 +1,17 @@
 from stepcount import hmm_utils
-import sslmodel
 from sklearn.model_selection import GroupShuffleSplit
 import torch
 from scipy.special import softmax
 from torch.utils.data import DataLoader
-from utils import get_inverse_class_weights
 import torch.nn.init as init
 import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from torch.autograd import Variable
+
+import asleep.sslmodel
+from asleep.utils import get_inverse_class_weights
 
 
 def weight_init(m):
@@ -206,9 +207,9 @@ class Resnet(nn.Module):
 
     In other words:
 
-            bn-relu-conv-bn-relu-conv                        bn-relu-conv-bn-relu-conv
-           /                         \                      /                         \
-    x->conv --------------------------(+)-bn-relu-down->conv --------------------------(+)-bn-relu-down-> ...
+            bn-relu-conv-bn-relu-conv
+           /                         \
+    x->conv --------------------------(+)-bn-relu-down->conv
 
     """
 
@@ -397,7 +398,8 @@ class Downsample(nn.Module):
         total_padding = order * (factor - 1)
         assert total_padding % 2 == 0, (
             "Misspecified downsampling parameters."
-            "Downsampling factor and order must be such that order*(factor-1) is divisible by 2"
+            "Downsampling factor and order must be such that "
+            "order*(factor-1) is divisible by 2"
         )
         self.padding = int(order * (factor - 1) / 2)
 
@@ -412,8 +414,11 @@ class Downsample(nn.Module):
 
     def forward(self, x):
         return F.conv1d(
-            x, self.kernel, stride=self.stride, padding=self.padding, groups=x.shape[1]
-        )
+            x,
+            self.kernel,
+            stride=self.stride,
+            padding=self.padding,
+            groups=x.shape[1])
 
 
 class CNNLSTM(nn.Module):
@@ -465,11 +470,15 @@ class CNNLSTM(nn.Module):
         if self.bidrectional:
             init_lstm_layer = self.lstm_layer * 2
         hidden_a = torch.randn(
-            init_lstm_layer, batch_size, self.lstm_nn_size, device=self.model_device
-        )
+            init_lstm_layer,
+            batch_size,
+            self.lstm_nn_size,
+            device=self.model_device)
         hidden_b = torch.randn(
-            init_lstm_layer, batch_size, self.lstm_nn_size, device=self.model_device
-        )
+            init_lstm_layer,
+            batch_size,
+            self.lstm_nn_size,
+            device=self.model_device)
 
         hidden_a = Variable(hidden_a)
         hidden_b = Variable(hidden_b)
@@ -477,7 +486,8 @@ class CNNLSTM(nn.Module):
 
     def forward(self, x, seq_lengths):
         # x dim: batch_size x C x F_1
-        # we will need to do the packing of the sequence dynamically for each batch of input
+        # we will need to do the packing of the sequence dynamically
+        # for each batch of input
         # 1. feature extractor
         x = self.feature_extractor(x)  # x dim: total_epoch_num * feature size
 
