@@ -110,6 +110,7 @@ def setup_cnn(cfg, my_device):
                            dropout_p=cfg.model.dropout_p,
                            bi_lstm=cfg.model.bi_lstm,
                            lstm_layer=cfg.model.lstm_layer,
+                           trust_repo=True
                            )
 
     model.to(my_device, dtype=torch.float)
