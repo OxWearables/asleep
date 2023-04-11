@@ -8,7 +8,8 @@ import gzip
 import os.path
 
 # Model utils
-from utils import cnnLSTMInFerDataset, cnn_lstm_infer_collate, prepare_infer_data_cnnlstm, setup_transforms
+from asleep.utils import cnnLSTMInFerDataset, cnn_lstm_infer_collate, \
+    prepare_infer_data_cnnlstm, setup_transforms
 
 # Torch
 import torch

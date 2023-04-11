@@ -1,5 +1,4 @@
-import os
-from src.asleep.models import CNNLSTM, weight_init
+from asleep.models import CNNLSTM, weight_init
 import torch
 
 dependencies = ["torch"]
@@ -18,9 +17,12 @@ def sleepnet(pretrained=True, my_device="cpu", num_classes=2, lstm_nn_size=128,
     weight_init(model)
 
     if pretrained:
-        checkpoint = 'https://github.com/OxWearables/asleep/releases/download/0.0.1/bi_sleepnet.mdl'
-        model.load_state_dict(torch.hub.load_state_dict_from_url(checkpoint,
-                                                                 progress=True,
-                                                                 map_location=torch.device(my_device)))
+        checkpoint = ('https://github.com/OxWearables/asleep/',
+                      'releases/download/0.0.1/bi_sleepnet.mdl')
+        model.load_state_dict(
+            torch.hub.load_state_dict_from_url(
+                checkpoint,
+                progress=True,
+                map_location=torch.device(my_device)))
     model.to(my_device, dtype=torch.float)
     return model
