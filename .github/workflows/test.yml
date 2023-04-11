@@ -1,6 +1,3 @@
-# this file is *not* meant to cover or endorse the use of GitHub Actions, but rather to
-# help test this project
-
 name: Test
 
 on: [push, pull_request]

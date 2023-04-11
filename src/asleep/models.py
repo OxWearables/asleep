@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from torch.autograd import Variable
 
-import asleep.sslmodel
+import asleep.sslmodel as sslmodel
 from asleep.utils import get_inverse_class_weights
 
 
