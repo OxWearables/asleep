@@ -10,6 +10,7 @@ import asleep.sleep_windows as sw
 from asleep.utils import data_long2wide, read, NpEncoder
 from asleep.sleepnet import start_sleep_net
 from asleep.macros import SLEEPNET_LABELS, SLEEPNET_BINARY_LABELS, SLEEPNET_THRE_CLASS_LABELS
+from asleep.summary import generate_sleep_parameters, summarize_daily_sleep
 
 """
 How to run the script:
@@ -19,6 +20,8 @@ python src/asleep/get_sleep.py data/test.bin
 ```
 
 """
+
+NON_WEAR_THRESHOLD = 3  # H
 
 
 def get_parsed_data(raw_data_path, info_data_path, resample_hz, args):
@@ -106,11 +109,13 @@ def get_sleep_windows(data2model, times, args):
         'label': binary_y
     }
     my_df = pd.DataFrame(my_data)
-    all_sleep_wins, sleep_wins_long_per_day = sw.time_series2sleep_blocks(
+    all_sleep_wins, sleep_wins_long_per_day, interval_start, interval_end = sw.time_series2sleep_blocks(
         my_df)
 
     # convert all_sleep_wins to a dataframe
     all_sleep_wins_df = pd.DataFrame(all_sleep_wins, columns=['start', 'end'])
+    all_sleep_wins_df['interval_start'] = interval_start
+    all_sleep_wins_df['interval_end'] = interval_end
     sleep_wins_long_per_day_df = pd.DataFrame(
         sleep_wins_long_per_day, columns=['start', 'end'])
 
@@ -193,11 +198,13 @@ def main():
         # fill the sleepnet predictions back to the original dataframe
         sleepnet_output[time_filter] = sleepnet_pred
 
-    ## 3. Skip this step if predictions already exist
+    # 3. Skip this step if predictions already exist
     # Output pandas dataframe
     # Times, Sleep/Wake, Sleep Stage
-    sleep_wake_predictions = np.vectorize(SLEEPNET_BINARY_LABELS.get)(sleepnet_output)
-    sleep_stage_predictions = np.vectorize(SLEEPNET_THRE_CLASS_LABELS.get)(sleepnet_output)
+    sleep_wake_predictions = np.vectorize(
+        SLEEPNET_BINARY_LABELS.get)(sleepnet_output)
+    sleep_stage_predictions = np.vectorize(
+        SLEEPNET_THRE_CLASS_LABELS.get)(sleepnet_output)
 
     predictions_df = pd.DataFrame(
         {
@@ -213,10 +220,9 @@ def main():
     print("Predictions saved to: {}".format(final_prediction_path))
     predictions_df.to_csv(final_prediction_path, index=False)
 
-
-    # 4. save summary statistics
-    ## 4.1 Generate sleep block df and indicate the longest block per day
-    ## time start, time end, is longest block
+    # 4. Summary statistics
+    # 4.1 Generate sleep block df and indicate the longest block per day
+    # time start, time end, is_longest_block
     all_sleep_wins_df['is_longest_block'] = False
     for index, row in sleep_wins_long_per_day_df.iterrows():
         start_t = row['start']
@@ -230,9 +236,15 @@ def main():
     print("Sleep block saved to: {}".format(sleep_block_path))
     all_sleep_wins_df.to_csv(sleep_block_path, index=False)
 
+    # 4.2  Generate daily summary statistics
+    output_json_path = os.path.join(args.outdir, 'summary.json')
+    # save day level df to csv
+    day_summary_path = os.path.join('outputs', 'day_summary.csv')
+    day_summary_df = generate_sleep_parameters(
+        all_sleep_wins_df, times, predictions_df, day_summary_path)
 
-    ## 4.2  overnight averages
-    ## TODO: hourly, daily, weekday, weekend,
+    # 4.3 Generate summary statistics across different days
+    summarize_daily_sleep(day_summary_df, output_json_path)
 
 
 def get_master_df(block_time_df, times, acc_array):

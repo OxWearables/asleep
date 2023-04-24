@@ -9,6 +9,12 @@ import re
 WAKE_LABEL = 0
 
 
+# Design a day class that stores all the information for a day
+# This is to make it easier to compute the summary statistics
+# The day class hold all the data for a day
+# It also has a function to compute the summary statistics, get non-wear time, etc.
+# The day class should be able to be serialized to json
+
 def date_parser(t):
     """
     Parse date a date string of the form e.g.
@@ -78,7 +84,8 @@ def get_se(sleep_stages):
 
 
 def get_reml(sleep_stages, rem_label=4):
-    # Rapid eye movement latency is the time from the sleep onset to the first epoch of REM sleep
+    # Rapid eye movement latency is the time from the sleep onset to the first
+    # epoch of REM sleep
     i = 0
     for stage in sleep_stages:
         if stage == rem_label:
@@ -124,13 +131,15 @@ def get_all_sleep_paras(sleep_stages, rem_label=4):
 
 def get_AgeAndAHI(meta_df, subject_id):
     age = meta_df[meta_df["Study ID"] == subject_id]["Age at Study"].item()
-    AHI = meta_df[meta_df["Study ID"] == subject_id]["#resp events/TST (hr)=AHI"].item()
+    AHI = meta_df[meta_df["Study ID"] ==
+                  subject_id]["#resp events/TST (hr)=AHI"].item()
     return age, AHI
 
 
 # get sleep bounts
 def get_sleep_bouts(sleep_stages):
-    # if the next stage is back to the original stage, then keep the current one
+    # if the next stage is back to the original stage, then keep the current
+    # one
     new_stages = []
     i = 0
     while i < len(sleep_stages) - 2:
@@ -156,7 +165,8 @@ def most_common(lst):
 
 # get sleep bouts
 def get_five_min_sleep_bouts(sleep_stages):
-    # if the next stage is back to the original stage, then keep the current one
+    # if the next stage is back to the original stage, then keep the current
+    # one
     start_idx = 0  # sleep bout for every 5 minutes
     sleep_bouts = []
     bout_length = 10  # epochs
@@ -219,7 +229,8 @@ def get_sleep_paras(subject_id, y_df, y_pred, pid):
         rem,
         transitions,
     ) = get_all_sleep_paras(y_df)
-    paras.extend([sol, tst, waso, reml, se, wake, n1, n2, n3, nrem, rem, transitions])
+    paras.extend([sol, tst, waso, reml, se, wake,
+                 n1, n2, n3, nrem, rem, transitions])
     (
         sol,
         tst,
@@ -234,7 +245,8 @@ def get_sleep_paras(subject_id, y_df, y_pred, pid):
         rem,
         transitions,
     ) = get_all_sleep_paras(y_pred_df)
-    paras.extend([sol, tst, waso, reml, se, wake, n1, n2, n3, nrem, rem, transitions])
+    paras.extend([sol, tst, waso, reml, se, wake,
+                 n1, n2, n3, nrem, rem, transitions])
     return paras
 
 
@@ -246,7 +258,8 @@ def get_sleep_block_day(first_time):
             hour=start_hour, minute=0, second=0, microsecond=0
         )  # after noon current day
     else:
-        block_start = first_time - timedelta(days=1)  # before noon the day before
+        # before noon the day before
+        block_start = first_time - timedelta(days=1)
         block_start = block_start.replace(
             hour=start_hour, minute=0, second=0, microsecond=0
         )
@@ -315,15 +328,24 @@ def compute_stats(
 
     # 1. weekday and weekend
     weekday_df = summary_df[
-        (summary_df["day"] == 1)
-        | (summary_df["day"] == 2)
-        | (summary_df["day"] == 3)
-        | (summary_df["day"] == 0)
-        | (summary_df["day"] == 6)
+        (summary_df["day"] == 1) |
+        (summary_df["day"] == 2) |
+        (summary_df["day"] == 3) |
+        (summary_df["day"] == 0) |
+        (summary_df["day"] == 6)
     ]
-    weekend_df = summary_df[(summary_df["day"] == 4) | (summary_df["day"] == 5)]
-    add_mean_and_median(weekday_df, summary_dict, metric_list, name_prefix="weekday")
-    add_mean_and_median(weekend_df, summary_dict, metric_list, name_prefix="weekend")
+    weekend_df = summary_df[(summary_df["day"] == 4) |
+                            (summary_df["day"] == 5)]
+    add_mean_and_median(
+        weekday_df,
+        summary_dict,
+        metric_list,
+        name_prefix="weekday")
+    add_mean_and_median(
+        weekend_df,
+        summary_dict,
+        metric_list,
+        name_prefix="weekend")
 
     # 2. Include summary statistics
     # 2.1 day count
@@ -343,8 +365,10 @@ def compute_stats(
     # 2.2 hourly stage duration
     # TODO: add the divison of number of days
     times_min = np.array([x.hour * 60 + x.minute for x in times])
-    weekday_times_min = np.array([x.hour * 60 + x.minute for x in weekday_times])
-    weekend_times_min = np.array([x.hour * 60 + x.minute for x in weekend_times])
+    weekday_times_min = np.array(
+        [x.hour * 60 + x.minute for x in weekday_times])
+    weekend_times_min = np.array(
+        [x.hour * 60 + x.minute for x in weekend_times])
     # convert all times to hourly
     num_hour_in_day = 24
     for i in range(num_hour_in_day):
@@ -386,16 +410,6 @@ def get_stage_durations(summary_dict, hourly_y, stats_name):
     summary_dict[stats_name + "_" + "tst_min"] = tst
 
 
-def check_inclusion(time_df, current_date):
-    selected_day = time_df[time_df["1st_date"] == current_date]
-    assert len(selected_day) >= 1
-
-    if selected_day["ok_wear_time"].item() is False:
-        return False
-    else:
-        return True
-
-
 def obtain_non_wear_df(sleep_block_path):
     all_time_df = pd.read_csv(
         sleep_block_path, parse_dates=["start", "end"], date_parser=date_parser
@@ -420,135 +434,3 @@ def obtain_non_wear_df(sleep_block_path):
     time_df["1st_date"] = start_dates
     time_df["ok_wear_time"] = ok_wear_time
     return time_df
-
-
-def summarize_sleep_stages(y_pred, times, out_file, sleep_block_path=""):
-    """
-    It first computes the daily avg metrics for each night. Then compute the summary statistics
-    across days adn weeks. The output is stored in a json format that can used be further analysis.
-
-    y_pred: sleepnet output
-    times: timestamp array
-    sleep_block_file: longest sleep_block generated by get_sleep_windows.py that contains non-wear information
-    out_file: json file name to store
-    """
-    metric_list = [
-        "sol_min",
-        "tst_min",
-        "waso_min",
-        "reml_min",
-        "se_perc",
-        "wake_min",
-        "n1_min",
-        "n2_min",
-        "n3_min",
-        "nrem_min",
-        "rem_min",
-        "transitions",
-    ]
-    summary_df = pd.DataFrame(columns=["day"] + metric_list)
-
-    # 0. filter out the sleep blocks based on non-wear time for that block
-    if len(sleep_block_path) != 0:
-        time_df = obtain_non_wear_df(sleep_block_path)
-
-        # nid2include = []
-        # for my_pid in np.unique(npid):
-        #     pid_filter = npid == my_pid
-        #     current_times = times[pid_filter]
-        #     start_time = current_times[0]
-        #     current_first_date = get_sleep_block_day(start_time)
-        #
-        #     if check_inclusion(time_df, current_first_date):
-        #         nid2include.append(my_pid)
-        #
-        # inclusion_filter = [k in nid2include for k in npid]
-        #
-        # # when no days are eligible, we don't filter anymore
-        # if np.sum(inclusion_filter) != 0:
-        #     y_pred = y_pred[inclusion_filter]
-        #     npid = npid[inclusion_filter]
-        #     times = times[inclusion_filter]
-
-    # 1. Compute daily average. We will use the first day to annotate
-    i = 0
-    weekday_y_pred = []
-    weekday_times = []
-    weekend_y_pred = []
-    weekend_times = []
-    times = pd.to_datetime(times)
-    for index, row in time_df.iterrows():
-        start_time = row['start']
-        end_time = row['end']
-        print(start_time, end_time)
-        print(times)
-        # set trace here
-        #import pdb; pdb.set_trace()
-
-        time_filter = (times >= start_time) & (times < end_time)
-
-        current_y = y_pred[time_filter]
-        current_times = times[time_filter]
-        block_start_time = current_times[0]
-        (
-            sol,
-            tst,
-            waso,
-            reml,
-            se,
-            wake,
-            n1,
-            n2,
-            n3,
-            nrem,
-            rem,
-            transitions,
-        ) = get_all_sleep_paras(current_y)
-
-        current_first_date = get_sleep_block_day(block_start_time)
-        summary_df.loc[i] = [
-            current_first_date.weekday(),
-            sol,
-            tst,
-            waso,
-            reml,
-            se,
-            wake,
-            n1,
-            n2,
-            n3,
-            nrem,
-            rem,
-            transitions,
-        ]
-        i += 1
-        # store y_pred for weekend and weekday separately
-        if current_first_date.weekday() == 4 or current_first_date.weekday() == 5:
-            weekend_y_pred.extend(current_y)
-            weekend_times.extend(current_times)
-        else:
-            weekday_y_pred.extend(current_y)
-            weekday_times.extend(current_times)
-
-    weekday_y_pred = np.array(weekday_y_pred)
-    weekday_times = np.array(weekday_times)
-    weekend_y_pred = np.array(weekend_y_pred)
-    weekend_times = np.array(weekend_times)
-
-    # 2. Calculate day-level and summary-level stats
-    summary_dict = compute_stats(
-        summary_df,
-        y_pred,
-        times,
-        weekday_y_pred,
-        weekday_times,
-        weekend_y_pred,
-        weekend_times,
-        metric_list,
-    )
-    summary_dict["num_valid_days"] = len(time_df)
-
-    # 3. Saving results
-    with open(out_file, "w") as f:
-        json.dump(summary_dict, f, indent=2)
-    print("Summary file written to %s!" % out_file)
