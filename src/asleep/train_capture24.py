@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from models import SleepWindowSSL
+from alseep.models import SleepWindowSSL
 from utils import resize
 import joblib
 
