@@ -8,7 +8,7 @@ The key features of this package are as follows:
 * Sleep architecture metric estimation including rapid - eye - movement(REM) / NREM sleep duration.
 
 
-![overview](./assets/figure.jpg)
+![](https://raw.githubusercontent.com/OxWearables/asleep/main/assets/figure.jpg)
 
 
 # Dependencies
