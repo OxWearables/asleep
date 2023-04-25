@@ -181,8 +181,11 @@ def time_series2sleep_blocks(
     print(start_date)
     print(end_date)
     my_intervals = get_day_intervals(start_date, end_date, date_format)
-    all_sleep_wins, sleep_wins_long, interval_start, interval_end, wear_time = get_sleep_blocks_per_day(
-        my_df, my_intervals)
+    all_sleep_wins, \
+        sleep_wins_long, \
+        interval_start, \
+        interval_end, \
+        wear_time = get_sleep_blocks_per_day(my_df, my_intervals)
     return all_sleep_wins, sleep_wins_long, interval_start, interval_end, wear_time
 
 

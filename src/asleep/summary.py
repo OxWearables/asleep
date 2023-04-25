@@ -70,7 +70,6 @@ def summarize_daily_sleep(day_summary_df, output_json_path, min_wear_time_h):
         'num_valid_days': sum(
             day_summary_df['wear_duration_H'] >= min_wear_time_h)}
 
-
     # save dictionary to json
     with open(output_json_path, 'w') as fp:
         json.dump(summary_dict, fp)

@@ -20,4 +20,3 @@ times = np.load(times_path)
 
 summarize_sleep_stages(prediction_df['raw_label'], times,
                        json_path, sleep_block_path=sleep_block_path)
-

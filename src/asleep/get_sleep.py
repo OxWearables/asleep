@@ -117,7 +117,7 @@ def get_sleep_windows(data2model, times, args):
     }
     my_df = pd.DataFrame(my_data)
     all_sleep_wins, sleep_wins_long_per_day, \
-    interval_start, interval_end, wear_time = sw.time_series2sleep_blocks(my_df)
+        interval_start, interval_end, wear_time = sw.time_series2sleep_blocks(my_df)
 
     # convert all_sleep_wins to a dataframe
     all_sleep_wins_df = pd.DataFrame(all_sleep_wins, columns=['start', 'end'])
@@ -168,7 +168,8 @@ def main():
     parser.add_argument(
         "--min_wear",
         "-m",
-        help="Min wear time in hours to be eligible for summary statistics computation. The sleepnet paper uses 22",
+        help="Min wear time in hours to be eligible for summary statistics "
+             "computation. The sleepnet paper uses 22",
         type=int,
         default=0)
     args = parser.parse_args()
@@ -250,8 +251,7 @@ def main():
         start_t = row['start']
         end_t = row['end']
         all_sleep_wins_df.loc[
-            (all_sleep_wins_df['start'] == start_t) &
-            (all_sleep_wins_df['end'] == end_t),
+            (all_sleep_wins_df['start'] == start_t) & (all_sleep_wins_df['end'] == end_t),
             'is_longest_block'] = True
     sleep_block_path = os.path.join(args.outdir, 'sleep_block.csv')
     print(all_sleep_wins_df.head())
