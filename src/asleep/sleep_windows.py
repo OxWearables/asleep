@@ -152,6 +152,7 @@ def get_sleep_blocks_per_day(my_df, my_intervals):
     sleep_wins_long = []
     interval_starts = []
     interval_ends = []
+    wear_times = []
 
     for interval in my_intervals:
         my_start_time = interval[0]
@@ -159,6 +160,7 @@ def get_sleep_blocks_per_day(my_df, my_intervals):
         interval_df = my_df[
             (my_df["time"] >= my_start_time) & (my_df["time"] < my_end_time)
         ]
+        wear_time = np.sum(interval_df["is_wear"]) / (2 * 60)
 
         sleep_wins, long_sleep_win = get_sleep_blocks(interval_df)
         sleep_wins_long.append(long_sleep_win)
@@ -166,8 +168,9 @@ def get_sleep_blocks_per_day(my_df, my_intervals):
 
         interval_starts.extend([my_start_time] * len(sleep_wins))
         interval_ends.extend([my_end_time] * len(sleep_wins))
+        wear_times.extend([wear_time] * len(sleep_wins))
 
-    return all_sleep_wins, sleep_wins_long, interval_starts, interval_ends
+    return all_sleep_wins, sleep_wins_long, interval_starts, interval_ends, wear_times
 
 
 def time_series2sleep_blocks(
@@ -178,9 +181,9 @@ def time_series2sleep_blocks(
     print(start_date)
     print(end_date)
     my_intervals = get_day_intervals(start_date, end_date, date_format)
-    all_sleep_wins, sleep_wins_long, interval_start, interval_end = get_sleep_blocks_per_day(
+    all_sleep_wins, sleep_wins_long, interval_start, interval_end, wear_time = get_sleep_blocks_per_day(
         my_df, my_intervals)
-    return all_sleep_wins, sleep_wins_long, interval_start, interval_end
+    return all_sleep_wins, sleep_wins_long, interval_start, interval_end, wear_time
 
 
 def get_day_intervals(start_date, end_date, date_format):

@@ -21,7 +21,7 @@ python src/asleep/get_sleep.py data/test.bin
 
 """
 
-NON_WEAR_THRESHOLD = 3  # H
+MIN_WEAR_TIME = 22  # H
 
 
 def get_parsed_data(raw_data_path, info_data_path, resample_hz, args):
@@ -102,20 +102,26 @@ def get_sleep_windows(data2model, times, args):
     # TODO: Create visu tool to visualize the results
     # TODO 2.2 Window correction for false negative
 
+    # TODO: check NAs in data2model and generate a binary is_wear in the same dimension at times to the my_data
+    # 2.1 Wear time identification
+    is_wear = np.sum(np.isnan(data2model), axis=(1, 2)) == 0
+
     # 2.3 Sleep window identification
     binary_y = np.vectorize(SLEEPNET_LABELS.get)(window_pred)
     my_data = {
         'time': times,
-        'label': binary_y
+        'label': binary_y,
+        'is_wear': is_wear
     }
     my_df = pd.DataFrame(my_data)
-    all_sleep_wins, sleep_wins_long_per_day, interval_start, interval_end = sw.time_series2sleep_blocks(
+    all_sleep_wins, sleep_wins_long_per_day, interval_start, interval_end, wear_time = sw.time_series2sleep_blocks(
         my_df)
 
     # convert all_sleep_wins to a dataframe
     all_sleep_wins_df = pd.DataFrame(all_sleep_wins, columns=['start', 'end'])
     all_sleep_wins_df['interval_start'] = interval_start
     all_sleep_wins_df['interval_end'] = interval_end
+    all_sleep_wins_df['day_wear_time_H'] = wear_time
     sleep_wins_long_per_day_df = pd.DataFrame(
         sleep_wins_long_per_day, columns=['start', 'end'])
 
