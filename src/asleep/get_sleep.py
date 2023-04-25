@@ -5,6 +5,8 @@ import pandas as pd
 import json
 import os
 import joblib
+import urllib
+import shutil
 
 import asleep.sleep_windows as sw
 from asleep.utils import data_long2wide, read, NpEncoder
@@ -25,6 +27,23 @@ python src/asleep/get_sleep.py data/sample.cwa.gz -m 22
 """
 
 NON_WEAR_THRESHOLD = 3  # H
+
+
+def load_model(model_path, force_download=False):
+    """ Load trained model. Download if not exists. """
+
+    pth = pathlib.Path(model_path)
+
+    if force_download or not pth.exists():
+
+        url = "https://github.com/OxWearables/asleep/releases/download/0.0.3/ssl.joblib.lzma"
+
+        print(f"Downloading {url}...")
+
+        with urllib.request.urlopen(url) as f_src, open(pth, "wb") as f_dst:
+            shutil.copyfileobj(f_src, f_dst)
+
+    return joblib.load(pth)
 
 
 def get_parsed_data(raw_data_path, info_data_path, resample_hz, args):
@@ -90,8 +109,8 @@ def transform_data2model_input(data2model_path, times_path, data, args):
 def get_sleep_windows(data2model, times, args):
     ssl_sleep_path = os.path.join(args.outdir, 'ssl_sleep.npy')
     if os.path.exists(ssl_sleep_path) is False or args.force_run is True:
-        sleep_window_detector = joblib.load('assets/ssl.joblib.lzma')
-
+        model_path = os.path.join(pathlib.Path(__file__).parent, "ssl.joblib.lzma")
+        sleep_window_detector = load_model(model_path, force_download=args.force_download)
         sleep_window_detector.device = 'cpu'  # expect channel last
         data_channel_last = np.swapaxes(data2model, 1, -1)
         window_pred = sleep_window_detector.predict(data_channel_last)
