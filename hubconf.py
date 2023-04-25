@@ -18,7 +18,7 @@ def sleepnet(pretrained=True, my_device="cpu", num_classes=2, lstm_nn_size=128,
 
     if pretrained:
         checkpoint = 'https://github.com/OxWearables/asleep/' \
-                     'releases/download/0.0.2/bi_sleepnet.mdl'
+                     'releases/download/0.0.3/bi_sleepnet.mdl'
         model.load_state_dict(
             torch.hub.load_state_dict_from_url(
                 checkpoint,
