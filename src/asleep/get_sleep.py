@@ -119,7 +119,6 @@ def get_sleep_windows(data2model, times, args):
     all_sleep_wins, sleep_wins_long_per_day, \
         interval_start, interval_end, wear_time = sw.time_series2sleep_blocks(my_df)
 
-
     # convert all_sleep_wins to a dataframe
     all_sleep_wins_df = pd.DataFrame(all_sleep_wins, columns=['start', 'end'])
     all_sleep_wins_df['interval_start'] = interval_start
