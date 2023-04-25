@@ -20,3 +20,4 @@ assets/*.joblib.*
 *.ipynb_checkpoints
 *.ipynb
 src/asleep/models
+*mdl

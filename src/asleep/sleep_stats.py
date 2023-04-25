@@ -1,5 +1,4 @@
 # This file will compute all the necessary sleep parameters
-import json
 import numpy as np
 from datetime import timedelta
 import pandas as pd
@@ -131,8 +130,7 @@ def get_all_sleep_paras(sleep_stages, rem_label=4):
 
 def get_AgeAndAHI(meta_df, subject_id):
     age = meta_df[meta_df["Study ID"] == subject_id]["Age at Study"].item()
-    AHI = meta_df[meta_df["Study ID"] ==
-                  subject_id]["#resp events/TST (hr)=AHI"].item()
+    AHI = meta_df[meta_df["Study ID"] == subject_id]["#resp events/TST (hr)=AHI"].item()
     return age, AHI
 
 
@@ -230,7 +228,7 @@ def get_sleep_paras(subject_id, y_df, y_pred, pid):
         transitions,
     ) = get_all_sleep_paras(y_df)
     paras.extend([sol, tst, waso, reml, se, wake,
-                 n1, n2, n3, nrem, rem, transitions])
+                  n1, n2, n3, nrem, rem, transitions])
     (
         sol,
         tst,
@@ -246,7 +244,7 @@ def get_sleep_paras(subject_id, y_df, y_pred, pid):
         transitions,
     ) = get_all_sleep_paras(y_pred_df)
     paras.extend([sol, tst, waso, reml, se, wake,
-                 n1, n2, n3, nrem, rem, transitions])
+                  n1, n2, n3, nrem, rem, transitions])
     return paras
 
 
@@ -267,12 +265,12 @@ def get_sleep_block_day(first_time):
 
 
 def add_mean_and_median(
-    data_df,
-    data_dict,
-    metric_list,
-    name_prefix="overall",
-    get_mean=True,
-    get_median=True,
+        data_df,
+        data_dict,
+        metric_list,
+        name_prefix="overall",
+        get_mean=True,
+        get_median=True,
 ):
     var_means = data_df.mean(axis=0, numeric_only=True)
     var_median = data_df.median(axis=0, numeric_only=True)
@@ -293,14 +291,14 @@ def add_mean_and_median(
 
 
 def compute_stats(
-    summary_df,
-    y_pred,
-    times,
-    weekday_y_pred,
-    weekday_times,
-    weekend_y_pred,
-    weekend_times,
-    metric_list,
+        summary_df,
+        y_pred,
+        times,
+        weekday_y_pred,
+        weekday_times,
+        weekend_y_pred,
+        weekend_times,
+        metric_list,
 ):
     summary_dict = {}
     summary_dict = add_mean_and_median(summary_df, summary_dict, metric_list)
@@ -327,13 +325,13 @@ def compute_stats(
         )
 
     # 1. weekday and weekend
-    weekday_df = summary_df[
-        (summary_df["day"] == 1) |
-        (summary_df["day"] == 2) |
-        (summary_df["day"] == 3) |
-        (summary_df["day"] == 0) |
-        (summary_df["day"] == 6)
-    ]
+    weekday_df = summary_df[(
+        (summary_df["day"] == 1)
+        | (summary_df["day"] == 2)
+        | (summary_df["day"] == 3)
+        | (summary_df["day"] == 0)
+        | (summary_df["day"] == 6)
+    )]
     weekend_df = summary_df[(summary_df["day"] == 4) |
                             (summary_df["day"] == 5)]
     add_mean_and_median(
@@ -372,24 +370,20 @@ def compute_stats(
     # convert all times to hourly
     num_hour_in_day = 24
     for i in range(num_hour_in_day):
-        lower_bound = i * 60
-        upper_bound = (i + 1) * 60
+        lb = i * 60
+        ub = (i + 1) * 60
 
-        hour_filter = (times_min >= lower_bound) & (times_min < upper_bound)
+        hour_filter = (times_min >= lb) & (times_min < ub)
         hourly_y = y_pred[hour_filter]
         get_stage_durations(summary_dict, hourly_y, stats_name=str(i) + "hour")
 
-        weekday_hour_filter = (weekday_times_min >= lower_bound) & (
-            weekday_times_min < upper_bound
-        )
+        weekday_hour_filter = (weekday_times_min >= lb) & (weekday_times_min < ub)
         weekday_hourly_y = weekday_y_pred[weekday_hour_filter]
         get_stage_durations(
             summary_dict, weekday_hourly_y, stats_name=str(i) + "-weekday-hour"
         )
 
-        weekend_hour_filter = (weekend_times_min >= lower_bound) & (
-            weekend_times_min < upper_bound
-        )
+        weekend_hour_filter = (weekend_times_min >= lb) & (weekend_times_min < ub)
         weekend_hourly_y = weekend_y_pred[weekend_hour_filter]
         get_stage_durations(
             summary_dict, weekend_hourly_y, stats_name=str(i) + "-weekend-hour"
