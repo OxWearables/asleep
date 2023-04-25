@@ -24,6 +24,8 @@ python src/asleep/get_sleep.py data/sample.cwa.gz -m 22
 
 """
 
+NON_WEAR_THRESHOLD = 3  # H
+
 
 def get_parsed_data(raw_data_path, info_data_path, resample_hz, args):
     if os.path.exists(raw_data_path) is False or os.path.exists(
@@ -114,8 +116,8 @@ def get_sleep_windows(data2model, times, args):
         'is_wear': is_wear
     }
     my_df = pd.DataFrame(my_data)
-    all_sleep_wins, sleep_wins_long_per_day, interval_start, interval_end, wear_time = sw.time_series2sleep_blocks(
-        my_df)
+    all_sleep_wins, sleep_wins_long_per_day, \
+    interval_start, interval_end, wear_time = sw.time_series2sleep_blocks(my_df)
 
     # convert all_sleep_wins to a dataframe
     all_sleep_wins_df = pd.DataFrame(all_sleep_wins, columns=['start', 'end'])
