@@ -1,8 +1,10 @@
 import os
 import numpy as np
 import pandas as pd
+import sys
+sys.path.append('..')
 
-from alseep.models import SleepWindowSSL
+from asleep.models import SleepWindowSSL
 from utils import resize
 import joblib
 
