@@ -4,9 +4,6 @@ import pandas as pd
 import json
 
 
-NON_WEAR_THRESHOLD = 3
-
-
 def summarize_df(my_df, prefix, compute_median=False):
     """
         Convert a dataframe to a json object with a pre-defined prefix
@@ -23,10 +20,10 @@ def summarize_df(my_df, prefix, compute_median=False):
     return summary_dict
 
 
-def summarize_daily_sleep(day_summary_df, output_json_path):
+def summarize_daily_sleep(day_summary_df, output_json_path, min_wear_time_h):
     # 1. overall
-    day_summary_df = day_summary_df[day_summary_df["non_wear_duration-H"] <=
-                                    NON_WEAR_THRESHOLD]
+    day_summary_df = day_summary_df[day_summary_df["wear_duration_H"] >=
+                                    min_wear_time_h]
     overall_means_dict = summarize_df(day_summary_df, "overall")
     overall_median_dict = summarize_df(
         day_summary_df, "overall", compute_median=True)
@@ -67,11 +64,12 @@ def summarize_daily_sleep(day_summary_df, output_json_path):
         **summary_dict,
         **weekend_dict,
         'num_valid_weekday': sum(
-            weekday_df['non_wear_duration-H'] <= NON_WEAR_THRESHOLD),
+            weekday_df['wear_duration_H'] >= min_wear_time_h),
         'num_valid_weekend': sum(
-            weekend_df['non_wear_duration-H'] <= NON_WEAR_THRESHOLD),
+            weekend_df['wear_duration_H'] >= min_wear_time_h),
         'num_valid_days': sum(
-            day_summary_df['non_wear_duration-H'] <= NON_WEAR_THRESHOLD)}
+            day_summary_df['wear_duration_H'] >= min_wear_time_h)}
+
 
     # save dictionary to json
     with open(output_json_path, 'w') as fp:
@@ -99,7 +97,7 @@ def generate_sleep_parameters(
             current_day_y_pred,
             current_day_times,
             row['interval_start'],
-            non_wear_duration=0)
+            wear_duration=row['wear_duration_H'])
         my_days.append(current_day_obj)
 
     # Convert all the day summary jsons to dataframe
@@ -120,7 +118,7 @@ def is_weekend(current_time):
         return False
 
 
-def get_day_stats(y_pred, non_wear_duration, is_my_weekend, interval_start):
+def get_day_stats(y_pred, wear_duration, is_my_weekend, interval_start):
     (
         sol,
         tst,
@@ -140,7 +138,7 @@ def get_day_stats(y_pred, non_wear_duration, is_my_weekend, interval_start):
     return dict({
         "start_day": interval_start.strftime("%Y-%m-%d"),
         "day_of_week": interval_start.weekday(),
-        "non_wear_duration-H": non_wear_duration,
+        "wear_duration_H": wear_duration,
         "is_weekend": is_my_weekend,
         "sol_min": sol,
         "tst_min": tst,
@@ -173,7 +171,7 @@ def get_day_hourly_stats(times, y_pred, summary):
 
 
 class Day:
-    def __init__(self, y_pred, times, interval_start, non_wear_duration=0):
+    def __init__(self, y_pred, times, interval_start, wear_duration=0):
         # TODO: add support for TST by using all the sleep blocks
         self.interval_start = interval_start
 
@@ -188,11 +186,10 @@ class Day:
 
         self.summary = get_day_stats(
             y_pred,
-            non_wear_duration,
+            wear_duration,
             self.is_weekend,
             interval_start)
         self.summary = get_day_hourly_stats(times, y_pred, self.summary)
-        print(self.summary)
 
     def get_day(self):
         return self.day

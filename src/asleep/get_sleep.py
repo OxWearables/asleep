@@ -16,7 +16,10 @@ from asleep.summary import generate_sleep_parameters, summarize_daily_sleep
 How to run the script:
 
 ```bash
-python src/asleep/get_sleep.py data/test.bin
+python src/asleep/get_sleep.py data/test.bin -m 22
+
+python src/asleep/get_sleep.py data/sample.cwa.gz -m 22
+
 ```
 
 """
@@ -102,20 +105,25 @@ def get_sleep_windows(data2model, times, args):
     # TODO: Create visu tool to visualize the results
     # TODO 2.2 Window correction for false negative
 
+    # 2.1 Wear time identification
+    is_wear = np.sum(np.isnan(data2model), axis=(1, 2)) == 0
+
     # 2.3 Sleep window identification
     binary_y = np.vectorize(SLEEPNET_LABELS.get)(window_pred)
     my_data = {
         'time': times,
-        'label': binary_y
+        'label': binary_y,
+        'is_wear': is_wear
     }
     my_df = pd.DataFrame(my_data)
-    all_sleep_wins, sleep_wins_long_per_day, interval_start, interval_end = sw.time_series2sleep_blocks(
-        my_df)
+    all_sleep_wins, sleep_wins_long_per_day, \
+    interval_start, interval_end, wear_time = sw.time_series2sleep_blocks(my_df)
 
     # convert all_sleep_wins to a dataframe
     all_sleep_wins_df = pd.DataFrame(all_sleep_wins, columns=['start', 'end'])
     all_sleep_wins_df['interval_start'] = interval_start
     all_sleep_wins_df['interval_end'] = interval_end
+    all_sleep_wins_df['wear_duration_H'] = wear_time
     sleep_wins_long_per_day_df = pd.DataFrame(
         sleep_wins_long_per_day, columns=['start', 'end'])
 
@@ -157,9 +165,23 @@ def main():
         help="Pytorch device to use, e.g.: 'cpu' or 'cuda:0' (for SSL only)",
         type=str,
         default='cpu')
+    parser.add_argument(
+        "--min_wear",
+        "-m",
+        help="Min wear time in hours to be eligible for summary statistics computation. The sleepnet paper uses 22",
+        type=int,
+        default=0)
     args = parser.parse_args()
 
     resample_hz = 30
+
+    # get file name and create a folder for the output
+    filename = os.path.basename(args.filepath)
+    os.makedirs(args.outdir, exist_ok=True)
+
+    args.outdir = os.path.join(args.outdir, filename)
+    print("Saving files to dir: {}".format(args.outdir))
+
     raw_data_path = os.path.join(args.outdir, 'raw.csv')
     info_data_path = os.path.join(args.outdir, 'info.json')
     data2model_path = os.path.join(args.outdir, 'data2model.npy')
@@ -244,7 +266,7 @@ def main():
         all_sleep_wins_df, times, predictions_df, day_summary_path)
 
     # 4.3 Generate summary statistics across different days
-    summarize_daily_sleep(day_summary_df, output_json_path)
+    summarize_daily_sleep(day_summary_df, output_json_path, args.min_wear)
 
 
 def get_master_df(block_time_df, times, acc_array):
