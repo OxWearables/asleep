@@ -1,4 +1,4 @@
-from sleep_stats import get_all_sleep_paras, get_stage_durations
+from asleep.sleep_stats import get_all_sleep_paras, get_stage_durations
 import numpy as np
 import pandas as pd
 import json
