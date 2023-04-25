@@ -12,10 +12,13 @@ The key features of this package are as follows:
 
 
 # Dependencies
-- Python 3.6+
+- Python 3.8+
 - Java 8 (1.8.0) or greater
+
+Check with:
 ```bash
-$ java - version
+$ python --version
+$ java -version
 ```
 
 # Installation
