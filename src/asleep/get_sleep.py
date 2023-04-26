@@ -36,7 +36,7 @@ def load_model(model_path, force_download=False):
 
     if force_download or not pth.exists():
 
-        url = "https://github.com/OxWearables/asleep/releases/download/0.0.3/ssl.joblib.lzma"
+        url = "https://github.com/OxWearables/asleep/releases/download/0.3.1/ssl.joblib.lzma"
 
         print(f"Downloading {url}...")
 
