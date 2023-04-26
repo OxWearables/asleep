@@ -179,6 +179,11 @@ def main():
              "time. force_run will make sure everything is "
              "regenerated")
     parser.add_argument(
+        "--remove_intermediate_files",
+        action="store_true",
+        help="Remove intermediate files to save space but it "
+             "will take longer to run the next time.")
+    parser.add_argument(
         "--pytorch_device",
         "-d",
         help="Pytorch device to use, e.g.: 'cpu' or 'cuda:0' (for SSL only)",
@@ -197,6 +202,7 @@ def main():
 
     # get file name and create a folder for the output
     filename = os.path.basename(args.filepath)
+    filename = filename.split('.')[0]
     os.makedirs(args.outdir, exist_ok=True)
 
     args.outdir = os.path.join(args.outdir, filename)
@@ -211,6 +217,9 @@ def main():
     # Add non-wear detection
     data, info = get_parsed_data(
         raw_data_path, info_data_path, resample_hz, args)
+    if args.remove_intermediate_files:
+        os.remove(raw_data_path)
+        os.remove(info_data_path)
     print(data.head())
 
     # 1.1 Transform data into a usable format for inference
@@ -219,6 +228,8 @@ def main():
         data2model_path, times_path, data, args)
     print("data2model shape: {}".format(data2model.shape))
     print("times shape: {}".format(times.shape))
+    if args.remove_intermediate_files:
+        os.remove(data2model_path)
 
     # 2. sleep window detection and inference
     (binary_y, all_sleep_wins_df,
@@ -279,8 +290,8 @@ def main():
 
     # 4.2  Generate daily summary statistics
     output_json_path = os.path.join(args.outdir, 'summary.json')
+    day_summary_path = os.path.join(args.outdir, 'day_summary.csv')
     # save day level df to csv
-    day_summary_path = os.path.join('outputs', 'day_summary.csv')
     day_summary_df = generate_sleep_parameters(
         all_sleep_wins_df, times, predictions_df, day_summary_path)
 

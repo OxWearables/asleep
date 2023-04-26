@@ -21,3 +21,4 @@ assets/*.joblib.*
 *.ipynb
 src/asleep/models
 *mdl
+*.lzma
