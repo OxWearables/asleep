@@ -19,7 +19,7 @@ How to run the script:
 
 ```bash
 python src/asleep/get_sleep.py data/test.bin -m 22 
--w /Users/hangy/Dphil/code/asleep/bi_sleepnet.mdl
+-w /Users/hangy/Dphil/code/asleep/bi_sleepnet.mdl -l /Users/hangy/Dphil/code/asleep
 
 python src/asleep/get_sleep.py data/sample.cwa.gz -m 22
 
@@ -201,9 +201,11 @@ def main():
         type=str,
         default='')
     parser.add_argument(
-        "--local",
+        "--local_repo_path",
+        "-l",
         help="Load model definition from local repo",
-        action="store_true")
+        type=str,
+        default='')
     parser.add_argument(
         "--min_wear",
         "-m",
@@ -253,7 +255,7 @@ def main():
 
     y_pred, test_pids = start_sleep_net(
         master_acc, master_npids, args.outdir,
-        args.model_weight_path, is_local_repo=args.local)
+        args.model_weight_path, local_repo_path=args.local_repo_path)
     sleepnet_output = binary_y
 
     for block_id in range(len(all_sleep_wins_df)):

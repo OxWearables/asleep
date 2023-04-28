@@ -103,13 +103,11 @@ def config_device(cfg):
     return my_device
 
 
-def setup_cnn(cfg, my_device, weight_path, is_local_repo=False):
+def setup_cnn(cfg, my_device, weight_path, local_repo_path=""):
     print("setting up cnn")
-    if is_local_repo:
+    if len(local_repo_path) > 0:
         print("access local repo")
-        dirname = Path(__file__).parent.parent.parent
-        print(dirname)
-        model = torch.hub.load(dirname,
+        model = torch.hub.load(local_repo_path,
                                'sleepnet',
                                source='local',
                                num_classes=cfg.data.num_classes,
@@ -166,11 +164,12 @@ def align_output(y_red, real_pid, test_pid):
     return np.array(aligned_pred)
 
 
-def sleepnet_inference(X, pid, weight_path, cfg, is_local_repo=False):
+def sleepnet_inference(X, pid, weight_path, cfg, local_repo_path=""):
     start = time.time()
     my_device = config_device(cfg)
 
-    model = setup_cnn(cfg, my_device, weight_path, is_local_repo=is_local_repo)
+    model = setup_cnn(cfg, my_device, weight_path,
+                      local_repo_path=local_repo_path)
     test_loader = setup_dataset(X, pid, cfg)
 
     test_y_pred, test_pid, test_probs = forward_batches(
@@ -200,7 +199,7 @@ def sleepnet_inference(X, pid, weight_path, cfg, is_local_repo=False):
     return aligned_y_pred, test_pid
 
 
-def start_sleep_net(X, pid, data_root, weight_path, device_id=-1, is_local_repo=False):
+def start_sleep_net(X, pid, data_root, weight_path, device_id=-1, local_repo_path=""):
     initialize(config_path="conf")
     cfg = compose(
         "config_eval",
@@ -214,4 +213,4 @@ def start_sleep_net(X, pid, data_root, weight_path, device_id=-1, is_local_repo=
     )
     if cfg.verbose:
         print(OmegaConf.to_yaml(cfg, resolve=True))
-    return sleepnet_inference(X, pid, weight_path, cfg, is_local_repo=is_local_repo)
+    return sleepnet_inference(X, pid, weight_path, cfg, local_repo_path=local_repo_path)
