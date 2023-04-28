@@ -5,7 +5,7 @@ dependencies = ["torch"]
 
 
 def sleepnet(pretrained=True, my_device="cpu", num_classes=2, lstm_nn_size=128,
-             dropout_p=0.5, bi_lstm=True, lstm_layer=1):
+             dropout_p=0.5, bi_lstm=True, lstm_layer=1, local_weight_path=""):
     model = CNNLSTM(
         num_classes=num_classes,
         model_device=my_device,
@@ -17,12 +17,17 @@ def sleepnet(pretrained=True, my_device="cpu", num_classes=2, lstm_nn_size=128,
     weight_init(model)
 
     if pretrained:
-        checkpoint = 'https://github.com/OxWearables/asleep/' \
-                     'releases/download/0.0.3/bi_sleepnet.mdl'
-        model.load_state_dict(
-            torch.hub.load_state_dict_from_url(
-                checkpoint,
-                progress=True,
-                map_location=torch.device(my_device)))
+        if len(local_weight_path) > 0:
+            state_dict = torch.load(local_weight_path)
+            model.load_state_dict(
+                state_dict, map_location=torch.device(my_device))
+        else:
+            checkpoint = 'https://github.com/OxWearables/asleep/' \
+                         'releases/download/0.0.3/bi_sleepnet.mdl'
+            model.load_state_dict(
+                torch.hub.load_state_dict_from_url(
+                    checkpoint,
+                    progress=True,
+                    map_location=torch.device(my_device)))
     model.to(my_device, dtype=torch.float)
     return model

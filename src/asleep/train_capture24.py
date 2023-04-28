@@ -1,12 +1,11 @@
+import joblib
+from utils import resize
+from asleep.models import SleepWindowSSL
 import os
 import numpy as np
 import pandas as pd
 import sys
 sys.path.append('..')
-
-from asleep.models import SleepWindowSSL
-from utils import resize
-import joblib
 
 
 """

@@ -130,7 +130,8 @@ def get_all_sleep_paras(sleep_stages, rem_label=4):
 
 def get_AgeAndAHI(meta_df, subject_id):
     age = meta_df[meta_df["Study ID"] == subject_id]["Age at Study"].item()
-    AHI = meta_df[meta_df["Study ID"] == subject_id]["#resp events/TST (hr)=AHI"].item()
+    AHI = meta_df[meta_df["Study ID"] ==
+                  subject_id]["#resp events/TST (hr)=AHI"].item()
     return age, AHI
 
 
@@ -326,11 +327,11 @@ def compute_stats(
 
     # 1. weekday and weekend
     weekday_df = summary_df[(
-        (summary_df["day"] == 1)
-        | (summary_df["day"] == 2)
-        | (summary_df["day"] == 3)
-        | (summary_df["day"] == 0)
-        | (summary_df["day"] == 6)
+        (summary_df["day"] == 1) |
+        (summary_df["day"] == 2) |
+        (summary_df["day"] == 3) |
+        (summary_df["day"] == 0) |
+        (summary_df["day"] == 6)
     )]
     weekend_df = summary_df[(summary_df["day"] == 4) |
                             (summary_df["day"] == 5)]
@@ -377,13 +378,17 @@ def compute_stats(
         hourly_y = y_pred[hour_filter]
         get_stage_durations(summary_dict, hourly_y, stats_name=str(i) + "hour")
 
-        weekday_hour_filter = (weekday_times_min >= lb) & (weekday_times_min < ub)
+        weekday_hour_filter = (
+            weekday_times_min >= lb) & (
+            weekday_times_min < ub)
         weekday_hourly_y = weekday_y_pred[weekday_hour_filter]
         get_stage_durations(
             summary_dict, weekday_hourly_y, stats_name=str(i) + "-weekday-hour"
         )
 
-        weekend_hour_filter = (weekend_times_min >= lb) & (weekend_times_min < ub)
+        weekend_hour_filter = (
+            weekend_times_min >= lb) & (
+            weekend_times_min < ub)
         weekend_hourly_y = weekend_y_pred[weekend_hour_filter]
         get_stage_durations(
             summary_dict, weekend_hourly_y, stats_name=str(i) + "-weekend-hour"

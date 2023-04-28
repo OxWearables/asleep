@@ -18,7 +18,8 @@ from asleep.summary import generate_sleep_parameters, summarize_daily_sleep
 How to run the script:
 
 ```bash
-python src/asleep/get_sleep.py data/test.bin -m 22
+python src/asleep/get_sleep.py data/test.bin -m 22 
+-w /Users/hangy/Dphil/code/asleep/bi_sleepnet.mdl
 
 python src/asleep/get_sleep.py data/sample.cwa.gz -m 22
 
@@ -109,8 +110,11 @@ def transform_data2model_input(data2model_path, times_path, data, args):
 def get_sleep_windows(data2model, times, args):
     ssl_sleep_path = os.path.join(args.outdir, 'ssl_sleep.npy')
     if os.path.exists(ssl_sleep_path) is False or args.force_run is True:
-        model_path = os.path.join(pathlib.Path(__file__).parent, "ssl.joblib.lzma")
-        sleep_window_detector = load_model(model_path, force_download=args.force_download)
+        model_path = os.path.join(
+            pathlib.Path(__file__).parent,
+            "ssl.joblib.lzma")
+        sleep_window_detector = load_model(
+            model_path, force_download=args.force_download)
         sleep_window_detector.device = 'cpu'  # expect channel last
         data_channel_last = np.swapaxes(data2model, 1, -1)
         window_pred = sleep_window_detector.predict(data_channel_last)
@@ -190,6 +194,19 @@ def main():
         type=str,
         default='cpu')
     parser.add_argument(
+        "--model_weight_path",
+        "-w",
+        help="For cluster job where there is no internet connection,"
+             "you might want to specify the path to the model weight file",
+        type=str,
+        default='')
+    parser.add_argument(
+        "--pytorch_device",
+        "-d",
+        help="Pytorch device to use, e.g.: 'cpu' or 'cuda:0' (for SSL only)",
+        type=str,
+        default='cpu')
+    parser.add_argument(
         "--min_wear",
         "-m",
         help="Min wear time in hours to be eligible for summary statistics "
@@ -236,7 +253,8 @@ def main():
      sleep_wins_long_per_day_df,
      master_acc, master_npids) = get_sleep_windows(data2model, times, args)
 
-    y_pred, test_pids = start_sleep_net(master_acc, master_npids, args.outdir)
+    y_pred, test_pids = start_sleep_net(
+        master_acc, master_npids, args.model_weight_path, args.outdir)
     sleepnet_output = binary_y
 
     for block_id in range(len(all_sleep_wins_df)):
@@ -280,9 +298,8 @@ def main():
     for index, row in sleep_wins_long_per_day_df.iterrows():
         start_t = row['start']
         end_t = row['end']
-        all_sleep_wins_df.loc[
-            (all_sleep_wins_df['start'] == start_t) & (all_sleep_wins_df['end'] == end_t),
-            'is_longest_block'] = True
+        all_sleep_wins_df.loc[(all_sleep_wins_df['start'] == start_t) & (
+            all_sleep_wins_df['end'] == end_t), 'is_longest_block'] = True
     sleep_block_path = os.path.join(args.outdir, 'sleep_block.csv')
     print(all_sleep_wins_df.head())
     print("Sleep block saved to: {}".format(sleep_block_path))

@@ -101,7 +101,7 @@ def config_device(cfg):
     return my_device
 
 
-def setup_cnn(cfg, my_device):
+def setup_cnn(cfg, my_device, weight_path):
     repo = 'OxWearables/asleep'
     model = torch.hub.load(repo,
                            'sleepnet',
@@ -111,6 +111,7 @@ def setup_cnn(cfg, my_device):
                            dropout_p=cfg.model.dropout_p,
                            bi_lstm=cfg.model.bi_lstm,
                            lstm_layer=cfg.model.lstm_layer,
+                           local_weight_path=weight_path,
                            trust_repo=True
                            )
 
@@ -143,11 +144,11 @@ def align_output(y_red, real_pid, test_pid):
     return np.array(aligned_pred)
 
 
-def sleepnet_inference(X, pid, cfg):
+def sleepnet_inference(X, pid, weight_path, cfg):
     start = time.time()
     my_device = config_device(cfg)
 
-    model = setup_cnn(cfg, my_device)
+    model = setup_cnn(cfg, my_device, weight_path)
     test_loader = setup_dataset(X, pid, cfg)
 
     test_y_pred, test_pid, test_probs = forward_batches(
@@ -177,7 +178,7 @@ def sleepnet_inference(X, pid, cfg):
     return aligned_y_pred, test_pid
 
 
-def start_sleep_net(X, pid, data_root, device_id=-1):
+def start_sleep_net(X, pid, data_root, weight_path, device_id=-1):
     initialize(config_path="conf")
     cfg = compose(
         "config_eval",
@@ -191,4 +192,4 @@ def start_sleep_net(X, pid, data_root, device_id=-1):
     )
     if cfg.verbose:
         print(OmegaConf.to_yaml(cfg, resolve=True))
-    return sleepnet_inference(X, pid, cfg)
+    return sleepnet_inference(X, pid, weight_path, cfg)
