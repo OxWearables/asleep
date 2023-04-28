@@ -101,19 +101,36 @@ def config_device(cfg):
     return my_device
 
 
-def setup_cnn(cfg, my_device, weight_path):
-    repo = 'OxWearables/asleep'
-    model = torch.hub.load(repo,
-                           'sleepnet',
-                           num_classes=cfg.data.num_classes,
-                           my_device=my_device,
-                           lstm_nn_size=cfg.model.lstm_nn_size,
-                           dropout_p=cfg.model.dropout_p,
-                           bi_lstm=cfg.model.bi_lstm,
-                           lstm_layer=cfg.model.lstm_layer,
-                           local_weight_path=weight_path,
-                           trust_repo=True
-                           )
+def setup_cnn(cfg, my_device, weight_path, is_local_repo=False):
+
+    if is_local_repo:
+        dirname = os.path.dirname(__file__)
+        repo_path = os.path.join(dirname, '..', '..')  # path containing hubconf.py
+        model = torch.hub.load(repo_path,
+                               'sleepnet',
+                               source='local',
+                               num_classes=cfg.data.num_classes,
+                               my_device=my_device,
+                               lstm_nn_size=cfg.model.lstm_nn_size,
+                               dropout_p=cfg.model.dropout_p,
+                               bi_lstm=cfg.model.bi_lstm,
+                               lstm_layer=cfg.model.lstm_layer,
+                               local_weight_path=weight_path,
+                               trust_repo=True
+                               )
+    else:
+        repo = 'OxWearables/asleep'
+        model = torch.hub.load(repo,
+                               'sleepnet',
+                               num_classes=cfg.data.num_classes,
+                               my_device=my_device,
+                               lstm_nn_size=cfg.model.lstm_nn_size,
+                               dropout_p=cfg.model.dropout_p,
+                               bi_lstm=cfg.model.bi_lstm,
+                               lstm_layer=cfg.model.lstm_layer,
+                               local_weight_path=weight_path,
+                               trust_repo=True
+                               )
 
     model.to(my_device, dtype=torch.float)
     return model
