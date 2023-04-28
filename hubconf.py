@@ -18,6 +18,7 @@ def sleepnet(pretrained=True, my_device="cpu", num_classes=2, lstm_nn_size=128,
 
     if pretrained:
         if len(local_weight_path) > 0:
+            print("Loading local weight from %s" % local_weight_path)
             state_dict = torch.load(local_weight_path)
             model.load_state_dict(
                 state_dict, map_location=torch.device(my_device))

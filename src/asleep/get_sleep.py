@@ -201,12 +201,6 @@ def main():
         type=str,
         default='')
     parser.add_argument(
-        "--pytorch_device",
-        "-d",
-        help="Pytorch device to use, e.g.: 'cpu' or 'cuda:0' (for SSL only)",
-        type=str,
-        default='cpu')
-    parser.add_argument(
         "--min_wear",
         "-m",
         help="Min wear time in hours to be eligible for summary statistics "
