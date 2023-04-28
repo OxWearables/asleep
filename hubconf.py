@@ -19,9 +19,10 @@ def sleepnet(pretrained=True, my_device="cpu", num_classes=2, lstm_nn_size=128,
     if pretrained:
         if len(local_weight_path) > 0:
             print("Loading local weight from %s" % local_weight_path)
-            state_dict = torch.load(local_weight_path)
+            state_dict = torch.load(local_weight_path,
+                                    map_location=torch.device(my_device))
             model.load_state_dict(
-                state_dict, map_location=torch.device(my_device))
+                state_dict)
         else:
             checkpoint = 'https://github.com/OxWearables/asleep/' \
                          'releases/download/0.0.3/bi_sleepnet.mdl'

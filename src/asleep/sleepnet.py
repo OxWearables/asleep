@@ -6,6 +6,8 @@ import time
 import os
 import gzip
 import os.path
+from pathlib import Path
+
 
 # Model utils
 from asleep.utils import cnnLSTMInFerDataset, cnn_lstm_infer_collate, \
@@ -102,11 +104,12 @@ def config_device(cfg):
 
 
 def setup_cnn(cfg, my_device, weight_path, is_local_repo=False):
-
+    print("setting up cnn")
     if is_local_repo:
-        dirname = os.path.dirname(__file__)
-        repo_path = os.path.join(dirname, '..', '..')  # path containing hubconf.py
-        model = torch.hub.load(repo_path,
+        print("access local repo")
+        dirname = Path(__file__).parent.parent.parent
+        print(dirname)
+        model = torch.hub.load(dirname,
                                'sleepnet',
                                source='local',
                                num_classes=cfg.data.num_classes,
@@ -119,6 +122,8 @@ def setup_cnn(cfg, my_device, weight_path, is_local_repo=False):
                                trust_repo=True
                                )
     else:
+        print("access remote repo")
+
         repo = 'OxWearables/asleep'
         model = torch.hub.load(repo,
                                'sleepnet',
@@ -161,11 +166,11 @@ def align_output(y_red, real_pid, test_pid):
     return np.array(aligned_pred)
 
 
-def sleepnet_inference(X, pid, weight_path, cfg):
+def sleepnet_inference(X, pid, weight_path, cfg, is_local_repo=False):
     start = time.time()
     my_device = config_device(cfg)
 
-    model = setup_cnn(cfg, my_device, weight_path)
+    model = setup_cnn(cfg, my_device, weight_path, is_local_repo=is_local_repo)
     test_loader = setup_dataset(X, pid, cfg)
 
     test_y_pred, test_pid, test_probs = forward_batches(
@@ -195,7 +200,7 @@ def sleepnet_inference(X, pid, weight_path, cfg):
     return aligned_y_pred, test_pid
 
 
-def start_sleep_net(X, pid, data_root, weight_path, device_id=-1):
+def start_sleep_net(X, pid, data_root, weight_path, device_id=-1, is_local_repo=False):
     initialize(config_path="conf")
     cfg = compose(
         "config_eval",
@@ -209,4 +214,4 @@ def start_sleep_net(X, pid, data_root, weight_path, device_id=-1):
     )
     if cfg.verbose:
         print(OmegaConf.to_yaml(cfg, resolve=True))
-    return sleepnet_inference(X, pid, weight_path, cfg)
+    return sleepnet_inference(X, pid, weight_path, cfg, is_local_repo=is_local_repo)

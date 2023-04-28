@@ -201,6 +201,10 @@ def main():
         type=str,
         default='')
     parser.add_argument(
+        "--local",
+        help="Load model definition from local repo",
+        action="store_true")
+    parser.add_argument(
         "--min_wear",
         "-m",
         help="Min wear time in hours to be eligible for summary statistics "
@@ -248,7 +252,8 @@ def main():
      master_acc, master_npids) = get_sleep_windows(data2model, times, args)
 
     y_pred, test_pids = start_sleep_net(
-        master_acc, master_npids, args.model_weight_path, args.outdir)
+        master_acc, master_npids, args.outdir,
+        args.model_weight_path, is_local_repo=args.local)
     sleepnet_output = binary_y
 
     for block_id in range(len(all_sleep_wins_df)):
