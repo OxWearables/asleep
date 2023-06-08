@@ -6,7 +6,6 @@ import time
 import os
 import gzip
 import os.path
-from pathlib import Path
 
 
 # Model utils
