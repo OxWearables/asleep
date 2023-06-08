@@ -7,6 +7,7 @@ import os
 import joblib
 import urllib
 import shutil
+import datetime
 
 import asleep.sleep_windows as sw
 from asleep.utils import data_long2wide, read, NpEncoder
@@ -18,7 +19,7 @@ from asleep.summary import generate_sleep_parameters, summarize_daily_sleep
 How to run the script:
 
 ```bash
-python src/asleep/get_sleep.py data/test.bin -m 22 
+python src/asleep/get_sleep.py data/test.bin -m 22
 -w /Users/hangy/Dphil/code/asleep/bi_sleepnet.mdl -l /Users/hangy/Dphil/code/asleep
 
 python src/asleep/get_sleep.py data/sample.cwa.gz -m 22
@@ -48,17 +49,35 @@ def load_model(model_path, force_download=False):
 
 
 def get_parsed_data(raw_data_path, info_data_path, resample_hz, args):
+    time_shift = 0
+    if args.time_shift != '0':
+        if args.time_shift[0] == '-':
+            time_shift = -int(args.time_shift[1:])
+        else:
+            time_shift = int(args.time_shift[1:])
+
+    # add the time shift to the parsed data frame
     if os.path.exists(raw_data_path) is False or os.path.exists(
             info_data_path) is False or args.force_run is True:
         data, info = read(args.filepath, resample_hz)
         data = data.reset_index()
+
+        # apply time shift
+        start_time = pd.to_datetime(info['StartTime'])
+        end_time = pd.to_datetime(info['EndTime'])
+        info['StartTime'] = start_time + datetime.timedelta(hours=time_shift)
+        info['EndTime'] = end_time + datetime.timedelta(hours=time_shift)
+        info['StartTime'] = info['StartTime'].strftime('%Y-%m-%d %H:%M:%S')
+        info['EndTime'] = info['EndTime'].strftime('%Y-%m-%d %H:%M:%S')
+        data['time'] = data['time'] + datetime.timedelta(hours=time_shift)
+        print("Time shift applied: {} hours".format(time_shift))
+
         pathlib.Path(args.outdir).mkdir(parents=True, exist_ok=True)
         data.to_csv(raw_data_path)
         with open(info_data_path, 'w', encoding='utf-8') as f:
             json.dump(info, f, ensure_ascii=False, indent=4, cls=NpEncoder)
         print("Raw data file saved to: {}".format(raw_data_path))
         print("Info data file saved to: {}".format(info_data_path))
-
     else:
         print("Raw data file already exists. Skipping raw data parsing.")
         data = pd.read_csv(raw_data_path)
@@ -213,6 +232,12 @@ def main():
              "computation. The sleepnet paper uses 22",
         type=int,
         default=0)
+    parser.add_argument(
+        "--time_shift",
+        type=str,
+        help="The number hours to shift forward or backward from "
+             "the current device time. e.g. +1 or -1",
+        default="0")
     args = parser.parse_args()
 
     resample_hz = 30
