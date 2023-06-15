@@ -1,5 +1,6 @@
 # for capture24 label conversion
 SLEEPNET_LABELS = {
+    -1: -1,
     0: 0,
     1: 0,
     2: 0,
@@ -8,6 +9,7 @@ SLEEPNET_LABELS = {
 
 # for predictions
 SLEEPNET_BINARY_LABELS = {
+    -1: 'non_wear',
     0: 'wake',
     1: 'sleep',
     2: 'sleep',
@@ -16,6 +18,7 @@ SLEEPNET_BINARY_LABELS = {
 }
 
 SLEEPNET_THRE_CLASS_LABELS = {
+    -1: 'non_wear',
     0: 'wake',
     1: 'NREM',
     2: 'NREM',

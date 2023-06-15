@@ -26,9 +26,14 @@ python src/asleep/get_sleep.py data/sample.cwa.gz -m 22
 
 ```
 
+All the prediction data will be saved for all epochs including non-wear
+but just the non-wear epoch labels
+will always be -1.
+
 """
 
 NON_WEAR_THRESHOLD = 3  # H
+NON_WEAR_PREDICTION_FLAG = -1
 
 
 def load_model(model_path, force_download=False):
@@ -37,7 +42,6 @@ def load_model(model_path, force_download=False):
     pth = pathlib.Path(model_path)
 
     if force_download or not pth.exists():
-
         url = "https://github.com/OxWearables/asleep/releases/download/0.3.1/ssl.joblib.lzma"
 
         print(f"Downloading {url}...")
@@ -60,6 +64,8 @@ def get_parsed_data(raw_data_path, info_data_path, resample_hz, args):
     if os.path.exists(raw_data_path) is False or os.path.exists(
             info_data_path) is False or args.force_run is True:
         data, info = read(args.filepath, resample_hz)
+        # data will have the following columns:
+        # time, x, y, z, non_wear
         data = data.reset_index()
 
         # apply time shift
@@ -87,26 +93,35 @@ def get_parsed_data(raw_data_path, info_data_path, resample_hz, args):
     return data, info
 
 
-def transform_data2model_input(data2model_path, times_path, data, args):
+def transform_data2model_input(
+        data2model_path,
+        times_path,
+        non_wear_path,
+        data,
+        args):
     """
     Current:
-                                   x         y         z
+                                   x         y         z          non_wear
     time
-    2014-12-17 18:00:00.500000000  0.359059  0.195311 -0.950869
-    2014-12-17 18:00:00.533333333  0.331267  0.226415 -0.931257
+    2014-12-17 18:00:00.500000000  0.359059  0.195311 -0.950869   True
+    2014-12-17 18:00:00.533333333  0.331267  0.226415 -0.931257   False
 
     Desired:
     times array: 1 x N
+    non_wear_flag array: 1 x N
     data array: N x 3 x 900 (30 seconds of data at 30Hz)
     """
     if os.path.exists(data2model_path) is False or os.path.exists(
             times_path) is False or args.force_run is True:
-        times = data.time.to_numpy()
+        times = data['time'].to_numpy()
+        non_wear = data['non_wear'].to_numpy()
         data = data[['x', 'y', 'z']].to_numpy()
-        data2model, times = data_long2wide(data, times=times)
+        data2model, times, non_wear = data_long2wide(data, times, non_wear)
 
-        np.save(os.path.join(args.outdir, 'data2model.npy'), data2model)
-        np.save(os.path.join(args.outdir, 'times.npy'), times)
+        np.save(data2model_path, data2model)
+        np.save(times_path, times)
+        np.save(non_wear_path, non_wear)
+
         print(
             "Data2model file saved to: {}".format(
                 os.path.join(
@@ -117,17 +132,29 @@ def transform_data2model_input(data2model_path, times_path, data, args):
                 os.path.join(
                     args.outdir,
                     'times.npy')))
-
+        print(
+            "Non-wear file saved to: {}".format(
+                os.path.join(
+                    args.outdir,
+                    'non_wear.npy')))
     else:
         print("Data2model file already exists. "
               "Skip data transformation.")
         data2model = np.load(data2model_path)
         times = np.load(times_path)
-    return data2model, times
+        non_wear = np.load(non_wear_path)
+    return data2model, times, non_wear
 
 
-def get_sleep_windows(data2model, times, args):
+def get_sleep_windows(data2model, times, non_wear, args):
+    # data2model: N x 3 x 900
+    # non_wear_flag: N x 1
+    # TODO: only inference on the periods when non-wear is false
     ssl_sleep_path = os.path.join(args.outdir, 'ssl_sleep.npy')
+    sleep_prediction = np.ones(len(times)) * NON_WEAR_PREDICTION_FLAG
+    original_data2model = data2model.copy()
+    data2model = data2model[~non_wear]
+
     if os.path.exists(ssl_sleep_path) is False or args.force_run is True:
         model_path = os.path.join(
             pathlib.Path(__file__).parent,
@@ -137,27 +164,30 @@ def get_sleep_windows(data2model, times, args):
         sleep_window_detector.device = 'cpu'  # expect channel last
         data_channel_last = np.swapaxes(data2model, 1, -1)
         window_pred = sleep_window_detector.predict(data_channel_last)
-        print(window_pred.shape)
-        print(np.unique(window_pred, return_counts=True))
-        np.save(ssl_sleep_path, window_pred)
+        sleep_prediction[~non_wear] = window_pred
+        print(sleep_prediction.shape)
+        print(np.unique(sleep_prediction, return_counts=True))
+        np.save(ssl_sleep_path, sleep_prediction)
     else:
-        window_pred = np.load(ssl_sleep_path)
+        sleep_prediction = np.load(ssl_sleep_path)
 
-    # Testing plan
-    # TODO: Create visu tool to visualize the results
-    # TODO 2.2 Window correction for false negative
-
-    # 2.1 Wear time identification
-    is_wear = np.sum(np.isnan(data2model), axis=(1, 2)) == 0
-
-    # 2.3 Sleep window identification
-    binary_y = np.vectorize(SLEEPNET_LABELS.get)(window_pred)
+    # 2.1 Sleep window identification
+    binary_y = np.vectorize(SLEEPNET_LABELS.get)(sleep_prediction)
     my_data = {
         'time': times,
         'label': binary_y,
-        'is_wear': is_wear
+        'is_wear': binary_y != NON_WEAR_PREDICTION_FLAG
     }
+
+    # non-wear fix for false positive
     my_df = pd.DataFrame(my_data)
+    counter = sw.find_sleep_block_duration(my_df)
+    epoch_length = 30  # unit in sec
+    valid_sleep_block_idxes = sw.find_valid_sleep_blocks(counter, epoch_length)
+    gap2fill = sw.find_gaps2fill(
+        valid_sleep_block_idxes, epoch_length, counter)
+    my_df = sw.fill_gaps(my_df, counter, gap2fill)
+
     all_sleep_wins, sleep_wins_long_per_day, \
         interval_start, interval_end, wear_time = sw.time_series2sleep_blocks(my_df)
 
@@ -169,9 +199,10 @@ def get_sleep_windows(data2model, times, args):
     sleep_wins_long_per_day_df = pd.DataFrame(
         sleep_wins_long_per_day, columns=['start', 'end'])
 
-    # 2.4 Extract and concatenate the sleep windows for the sleepnet
+    # 2.2 Extract and concatenate the sleep windows for the sleepnet
     master_acc, master_npids = get_master_df(
-        all_sleep_wins_df, times, data2model)
+        all_sleep_wins_df, times, original_data2model)
+
     return \
         binary_y, \
         all_sleep_wins_df, \
@@ -254,6 +285,7 @@ def main():
     info_data_path = os.path.join(args.outdir, 'info.json')
     data2model_path = os.path.join(args.outdir, 'data2model.npy')
     times_path = os.path.join(args.outdir, 'times.npy')
+    non_wear_path = os.path.join(args.outdir, 'non_wear.npy')
 
     # 1. Parse raw files into a dataframe
     # Add non-wear detection
@@ -262,21 +294,21 @@ def main():
     if args.remove_intermediate_files:
         os.remove(raw_data_path)
         os.remove(info_data_path)
-    print(data.head())
 
     # 1.1 Transform data into a usable format for inference
-    # TODO: refactor the saving and loading functions
-    data2model, times = transform_data2model_input(
-        data2model_path, times_path, data, args)
+    data2model, times, non_wear = transform_data2model_input(
+        data2model_path, times_path, non_wear_path, data, args)
     print("data2model shape: {}".format(data2model.shape))
     print("times shape: {}".format(times.shape))
+    print("Non_wear flag shape: {}".format(non_wear.shape))
+
+    # times and non-wear flag need to be stored for visualization
     if args.remove_intermediate_files:
         os.remove(data2model_path)
 
     # 2. sleep window detection and inference
-    (binary_y, all_sleep_wins_df,
-     sleep_wins_long_per_day_df,
-     master_acc, master_npids) = get_sleep_windows(data2model, times, args)
+    (binary_y, all_sleep_wins_df, sleep_wins_long_per_day_df, master_acc,
+     master_npids) = get_sleep_windows(data2model, times, non_wear, args)
 
     y_pred, test_pids = start_sleep_net(
         master_acc, master_npids, args.outdir,
