@@ -16,8 +16,9 @@ How to run the script:
 python src/asleep/visu_sleep.py outputs/test
 
 ```
-This script will visualize the sleep prediction results from the sleepnet model. The input data will be the
-subject-level prediction folder that contains the following files:
+This script will visualize the sleep prediction results from the sleepnet model.
+The input data will be the subject-level prediction folder that contains
+the following files:
 - predictions.csv: the predicted sleep labels
 - raw.csv: the raw accelerometer data
 - sleep_blocks.csv: the sleep blocks
@@ -116,7 +117,8 @@ def main():
         if idx == 0:
             hrLabels = ['12:00', '16:00', '20:00', '00:00', '04:00', '08:00', '12:00']
             plt.xticks(pd.date_range(start=datetime.combine(day_start, time(12, 0, 0, 0)),
-                                     end=datetime.combine(day_start + timedelta(days=1), time(12, 0, 0, 0)),
+                                     end=datetime.combine(day_start + timedelta(days=1),
+                                                          time(12, 0, 0, 0)),
                                      freq='4H'))
             ax.xaxis.tick_top()
             ax.set_xticklabels(hrLabels)

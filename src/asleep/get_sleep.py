@@ -26,7 +26,8 @@ python src/asleep/get_sleep.py data/sample.cwa.gz -m 22
 
 ```
 
-All the prediction data will be saved for all epochs including non-wear but just the non-wear epoch labels
+All the prediction data will be saved for all epochs including non-wear
+but just the non-wear epoch labels
 will always be -1.
 
 """

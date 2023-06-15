@@ -598,7 +598,8 @@ def get_stationary_indicator(data, window='10s', stdtol=15 / 1000):
     :param data: A pandas.DataFrame of acceleration time-series. It must contain
         at least columns `x,y,z` and the index must be a DateTimeIndex.
     :type data: pandas.DataFrame.
-    :param window: Rolling window to use to check for stationary periods. Defaults to 10 seconds ("10s").
+    :param window: Rolling window to use to check for stationary periods.
+     Defaults to 10 seconds ("10s").
     :type window: str, optional
     :param stdtol: Standard deviation under which the window is considered stationary.
         Defaults to 15 milligravity (0.015).
