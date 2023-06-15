@@ -12,6 +12,7 @@ from torchvision import transforms
 from scipy.interpolate import interp1d
 import math
 import json
+import warnings
 
 
 class NpEncoder(json.JSONEncoder):
@@ -56,9 +57,9 @@ def read(filepath, resample_hz='uniform'):
 
         data, info = actipy.process(
             data, sample_rate,
-            lowpass_hz=None,
+            lowpass_hz=20,
             calibrate_gravity=True,
-            detect_nonwear=True,
+            detect_nonwear=False,
             resample_hz=resample_hz,
         )
 
@@ -76,12 +77,16 @@ def read(filepath, resample_hz='uniform'):
             filepath,
             lowpass_hz=20,
             calibrate_gravity=True,
-            detect_nonwear=True,
+            detect_nonwear=False,
             resample_hz=resample_hz,
         )
 
     if 'ResampleRate' not in info:
         info['ResampleRate'] = info['SampleRate']
+
+    data, info_nonwear = detect_nonwear(data)
+    print(info_nonwear)
+    info.update(info_nonwear)
 
     return data, info
 
@@ -299,7 +304,7 @@ class EarlyStopping:
         self.val_loss_min = val_loss
 
 
-def data_long2wide(X, times):
+def data_long2wide(X, times, non_wear):
     """Convert long-format acc data to wide-format data.
 
     Parameters
@@ -313,11 +318,13 @@ def data_long2wide(X, times):
     X : np.narray N x 3 x 900
         Wide-format data.
     times: np.ndarray N x 1
+    non_wear: np.ndarray N x 1
     """
     # get multiple of 900
     remainder = X.shape[0] % 900
     X = X[:-remainder]
     times = times[:-remainder]
+    non_wear = non_wear[:-remainder]
 
     x = X[:, 0]
     y = X[:, 1]
@@ -327,10 +334,12 @@ def data_long2wide(X, times):
     y = y.reshape(-1, 900)
     z = z.reshape(-1, 900)
     times = times.reshape(-1, 900)
+    non_wear = non_wear.reshape(-1, 900)
 
     X = np.stack((x, y, z), axis=1)
     times = times[:, 0]
-    return X, times
+    non_wear = non_wear[:, 0]
+    return X, times, non_wear
 
 
 class cnnLSTMInFerDataset:
@@ -518,3 +527,141 @@ def setup_transforms(augment_mode, is_train):
             ]
         )
     return my_transform
+
+
+##########################################################################
+#
+#                                    Non-wear detection
+#                        Taken from Actipy. Need to update if actipy changes.
+# https://github.com/OxWearables/actipy/blob/5ca689a1bca1a338712a5e8b9831eaf9e20d95d9/src/actipy/processing.py#L97
+##########################################################################
+def get_wear_time(t, tol=0.1):
+    """ Return wear time in seconds and number of interrupts. """
+    tdiff = t.diff()
+    ttol = tdiff.mode().max() * (1 + tol)
+    total_time = tdiff[tdiff <= ttol].sum().total_seconds()
+    num_interrupts = (tdiff > ttol).sum()
+    return total_time, num_interrupts
+
+
+def detect_nonwear(data, patience='90m', stationary_indicator=None):
+    """
+    Detect nonwear episodes based on long periods of no movement.
+
+    :param data: A pandas.DataFrame of acceleration time-series. The index must be a DateTimeIndex.
+    :type data: pandas.DataFrame.
+    :param patience: Minimum length of the stationary period to be flagged as
+        non-wear. Defaults to 90 minutes ("90m").
+    :type patience: str, optional
+    :param stationary_indicator: A boolean pandas.Series indexed as `data`
+        indicating stationary (low movement) periods. If None, it will be
+        automatically inferred. Defaults to None.
+    :type stationary_indicator: pandas.Series, optional
+    :return: Processed data and processing info.
+    :rtype: (pandas.DataFrame, dict)
+    """
+
+    info = {}
+
+    if stationary_indicator is None:
+        stationary_indicator = get_stationary_indicator(data)
+
+    group = ((stationary_indicator != stationary_indicator.shift(1))
+             .cumsum()
+             .where(stationary_indicator))
+    stationary_len = (group.groupby(group, dropna=True, group_keys=False)
+                           .apply(lambda g: g.index[-1] - g.index[0]))
+    if len(stationary_len) > 0:
+        nonwear_len = stationary_len[stationary_len > pd.Timedelta(patience)]
+    else:
+        nonwear_len = pd.Series(dtype='timedelta64[ns]')  # empty series
+
+    nonwear_time = nonwear_len.sum().total_seconds()
+    wear_time, _ = get_wear_time(data.index.to_series())
+    info['WearTime(days)'] = (wear_time - nonwear_time) / \
+        (60 * 60 * 24)  # update wear time
+    info['NonwearTime(days)'] = nonwear_time / (60 * 60 * 24)
+    info['NumNonwearEpisodes'] = len(nonwear_len)
+
+    nonwear_indicator = group.isin(nonwear_len.index)
+    data['non_wear'] = nonwear_indicator
+
+    return data, info
+
+
+def get_stationary_indicator(data, window='10s', stdtol=15 / 1000):
+    """
+    Taken from Actipy
+
+    Return a boolean pandas.Series indicating stationary (low movement) periods.
+
+    :param data: A pandas.DataFrame of acceleration time-series. It must contain
+        at least columns `x,y,z` and the index must be a DateTimeIndex.
+    :type data: pandas.DataFrame.
+    :param window: Rolling window to use to check for stationary periods. Defaults to 10 seconds ("10s").
+    :type window: str, optional
+    :param stdtol: Standard deviation under which the window is considered stationary.
+        Defaults to 15 milligravity (0.015).
+    :type stdtol: float, optional
+    :return: Boolean pandas.Series indexed as `data` indicating stationary periods.
+    :rtype: pandas.Series
+    """
+
+    def fn(data):
+        return (
+            (data[['x', 'y', 'z']]
+             .rolling(window)
+             .std() <
+             stdtol)
+            .all(axis=1)
+        )
+
+    stationary_indicator = pd.concat(
+        chunker(
+            data,
+            chunksize='4h',
+            leeway=window,
+            fn=fn
+        )
+    )
+
+    return stationary_indicator
+
+
+def slice_time(x, start, stop):
+    """ In pandas, slicing DateTimeIndex arrays is right-closed.
+    This function performs right-open slicing. """
+    x = x.loc[start: stop]
+    x = x[x.index != stop]
+    return x
+
+
+def chunker(data, chunksize='4h', leeway='0h', fn=None, fntrim=True):
+    """ Return chunk generator for a given datetime-indexed DataFrame.
+    A `leeway` parameter can be used to obtain overlapping chunks (e.g. leeway='30m').
+    If a function `fn` is provided, it is applied to each chunk. The leeway is
+    trimmed after function application by default (set `fntrim=False` to skip).
+    """
+
+    chunksize = pd.Timedelta(chunksize)
+    leeway = pd.Timedelta(leeway)
+    zero = pd.Timedelta(0)
+
+    t0, tf = data.index[0], data.index[-1]
+
+    for ti in pd.date_range(t0, tf, freq=chunksize):
+        start = ti - min(ti - t0, leeway)
+        stop = ti + chunksize + leeway
+        chunk = slice_time(data, start, stop)
+
+        if fn is not None:
+            chunk = fn(chunk)
+
+            if leeway > zero and fntrim:
+                try:
+                    chunk = slice_time(chunk, ti, ti + chunksize)
+                except ValueError:
+                    warnings.warn(
+                        f"Could not trim chunk. Ignoring fntrim={fntrim}...")
+
+        yield chunk

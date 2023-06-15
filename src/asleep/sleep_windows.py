@@ -138,6 +138,80 @@ def get_sleep_blocks(interval_df):
     return sleep_wins, long_sleep_win
 
 
+def find_valid_sleep_blocks(counter, epoch_length, min_duration_min=30):
+    SLEEP_LABEL = 1
+    sleep_block_min_len = min_duration_min * 60  # .5 hour
+    epoch_min_len = sleep_block_min_len / epoch_length
+
+    valid_sleep_block_idxes = []
+    for i in range(len(counter)):
+        e = counter[i]
+        len_idx = 1
+        label_idx = 0
+        if e[label_idx] == SLEEP_LABEL and e[len_idx] >= epoch_min_len:
+            valid_sleep_block_idxes.append(i)
+    return valid_sleep_block_idxes
+
+
+def find_sleep_block_duration(sleep_df):
+    # Find sleep duration for each block
+    # Return: Counter: n x 3: each row has block class, block length and the
+    # block starting idx
+    block_lengths = [
+        (x[0], len(list(x[1]))) for x in itertools.groupby(sleep_df["label"])
+    ]
+    block_lengths = np.array(block_lengths)
+
+    counter = []  # [label, block_len, start_idx]
+    i = 0
+    freq_idx = 1
+    for my_ele in block_lengths:
+        my_ele = my_ele.tolist()
+        my_ele.append(i)
+        i += my_ele[freq_idx]
+        counter.append(my_ele)
+    counter = np.array(counter)
+    return counter
+
+
+def find_gaps2fill(valid_sleep_block_idxes, epoch_length, counter):
+    """
+    Identify gap idx that need filling.
+    Take the eligible sleep block idx, output the idx for the gap that could be filled.
+    The idx will be a pair of starting sleep block and ending sleep block.
+    """
+    max_non_wear_len = 60 * 60 / epoch_length  # one hour
+    gap2fill = []
+    for i in range(len(valid_sleep_block_idxes) - 1):
+
+        current_block_idx = valid_sleep_block_idxes[i]
+        next_block_idx = valid_sleep_block_idxes[i + 1]
+
+        # compute the gap between these two blocks
+        original_idx_pos = 2
+        sleep_block_gap = (
+            counter[next_block_idx][original_idx_pos] -
+            counter[current_block_idx][original_idx_pos]
+        )
+        if sleep_block_gap <= max_non_wear_len:
+            gap2fill.append([current_block_idx, next_block_idx])
+    return gap2fill
+
+
+def fill_gaps(my_df, counter, gap2fill):
+    class_label = 1
+    for gap in gap2fill:
+        start_block_idx = gap[0]
+        end_block_idx = gap[1]
+
+        idx_pos = 2
+        date_df_idx_start = counter[start_block_idx][idx_pos]
+        date_df_idx_end = counter[end_block_idx][idx_pos]
+
+        my_df.loc[date_df_idx_start:date_df_idx_end, "label"] = class_label
+    return my_df
+
+
 def get_sleep_blocks_per_day(my_df, my_intervals):
     """
     my_df: time-series df produced by bbaa
@@ -178,8 +252,7 @@ def time_series2sleep_blocks(
 ):
     start_date = my_df["time"][0]
     end_date = my_df["time"][len(my_df) - 1]
-    print(start_date)
-    print(end_date)
+
     my_intervals = get_day_intervals(start_date, end_date, date_format)
     all_sleep_wins, \
         sleep_wins_long, \
