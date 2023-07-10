@@ -1,8 +1,22 @@
 ---
 layout: default
-title: Self-supervised Learning for Human Activity Recognition Using 700,000 Person-days of Wearable Data
-author: Hang Yuan*<sup>1,2,4</sup>, Shing Chan*<sup>1,2</sup>, Andrew P. Creagh<sup>2,3</sup>, Catherine Tong<sup>4</sup>, David A. Clifton<sup>3</sup>, Aiden Doherty<sup>1,2</sup>
-affiliation: Nuffield Department of Population Health, University of Oxford<sup>1</sup>,  Big Data Institute, University of Oxford <sup>2</sup>,  Department of Engineering Science, University of Oxford  <sup>3</sup>,  Department of Computer Science, University of Oxford <sup>4</sup>
+title: Self-supervised learning of accelerometer data provides new insights for sleep and its association with mortality
+author: Hang Yuan<sup>1,2</sup>, Tatiana Plekhanova<sup>3</sup>, Rosemary Walmsley<sup>1,2</sup>, 
+  Amy C. Reynolds<sup>5</sup>, Kathleen J. Maddison<sup>7</sup>, Maja Bucan<sup>6</sup>, 
+  Philip Gehrman<sup>8</sup>, Alex Rowland<sup>3</sup>, David W. Ray<sup>9</sup>,Derrick Bennett<sup>1,2</sup>, 
+  Joanne McVeigh<sup>10</sup>, Leon Straker<sup>10</sup>, Peter Eastwood<sup>11</sup>, Simon D. Kyle<sup>12</sup>, Aiden Doherty<sup>1,2</sup>
+affiliation: Nuffield Department of Population Health, University of Oxford<sup>1</sup>,  
+  Big Data Institute, University of Oxford <sup>2</sup>,  
+  University of Leicester, Diabetes Research Centre, Leicester <sup>3</sup>,
+  Department of Engineering Science, University of Oxford  <sup>4</sup>,
+  Flinders University, College of Medicine and Public Health <sup>5</sup>,
+  University of Pennsylvania, Department of Genetics, Philadelphia<sup>6</sup>,
+  University of Western Australia, Centre of Sleep Science, School of Human Sciences <sup>7</sup>,
+  University of Pennsylvania, Department of Psychiatry<sup>8</sup>,
+  University of Oxford, Oxford Centre for Diabetes, Endocrinology and Metabolism, Oxford Kavli Centre for Nanoscience Discovery<sup>9</sup>,
+  Curtin University, Curtin School of Allied Health<sup>10</sup>,
+  Health Futures Institute, Murdoch University<sup>11</sup>,
+  Sir Jules Thorn Sleep & Circadian Neuroscience Institute, Nuffield Department of Clinical Neurosciences, University of Oxford<sup>12</sup>
 ---
 
 <!------------------------------------------ Hyperlinks ---------------------------------------------------->
@@ -17,15 +31,17 @@ affiliation: Nuffield Department of Population Health, University of Oxford<sup>
 <!----------------------------------------- Abstract ------------------------------------------------------->
 <hr>
   <p style="text-align: center;">Abstract</p>
-
   <p>
-    Advances in deep learning for human activity recognition have been relatively limited due to the lack of large labelled datasets. 
-    In this study, we leverage self-supervised learning techniques on the UK-Biobank activity tracker dataset--the largest of 
-    its kind to date--containing more than 700,000 person-days of unlabelled wearable sensor data. Our resulting activity 
-    recognition model consistently outperformed strong baselines across seven benchmark datasets, with an F1 relative improvement 
-    of 2.5%-100% (median 18.4%), the largest improvements occurring in the smaller datasets. In contrast to previous studies, 
-    our results generalise across external datasets, devices, and environments. Our open-source model will help researchers and developers 
-    to build customisable and generalisable activity classifiers with high performance.
+    <b>Background</b>: Sleep is essential to life. Accurate measurement and classification of sleep/wake and sleep stages is important in clinical studies for sleep disorder diagnoses and in the interpretation of data from consumer devices for monitoring physical and mental well-being. Existing non-polysomnography sleep classification techniques mainly rely on heuristic methods developed in relatively small cohorts. Thus, we aimed to establish the accuracy of wrist-worn accelerometers for sleep stage classification and subsequently describe the association between sleep duration and efficiency (proportion of total time asleep when in bed) with mortality outcomes. 
+    
+    <br><br>
+    <b>Methods</b>: We developed and validated a self-supervised deep neural network for sleep stage classification using concurrent laboratory-based polysomnography and accelerometry data from three countries (Australia, the UK, and the USA). The model was validated within-cohort using subject-wise five-fold cross-validation for sleep-wake classification and in a three-class setting for sleep stage classification {wake, rapid-eye-movement sleep (REM), non-rapid-eye-movement sleep (NREM)} and by external validation. We assessed the face validity of our model for population inference by applying the model to the UK Biobank with ~100,000 participants, each of whom wore a wristband for up to seven days. The derived sleep parameters were used in a Cox regression model to study the association of sleep duration and sleep efficiency with all-cause mortality.
+
+    <br><br>
+    <b>Findings</b>: After exclusion, 1,448 participant nights of data were used to train the sleep classifier. The difference between polysomnography and the model classifications on the external validation was 34.7 minutes (95% limits of agreement (LoA):  -37.8 to 107.2 minutes) for total sleep duration, 2.6 minutes for REM duration (95% LoA:  -68.4 to 73.4 minutes) and 32.1 minutes (95% LoA:  -54.4 to 118.5 minutes) for NREM duration. The derived sleep architecture estimate in the UK Biobank sample showed good face validity. Among 66,214 UK Biobank participants, 1,642 mortality events were observed. Short sleepers (<6 hours) had a higher risk of mortality compared to participants with normal sleep duration (6 to 7.9 hours), regardless of whether they had low sleep efficiency (Hazard ratios (HRs): 1.69; 95% confidence intervals (CIs): 1.28 to 2.24 ) or high sleep efficiency (HRs: 1.42; 95% CIs: 1.14  to 1.77).
+    
+    <br><br>
+    <b>Interpretation</b>: Deep-learning-based sleep classification using accelerometers has a fair to moderate agreement with polysomnography. Our findings suggest that having short overnight sleep confers mortality risk irrespective of sleep continuity.
 
   </p>
 <hr>
@@ -38,53 +54,68 @@ affiliation: Nuffield Department of Population Health, University of Oxford<sup>
 
 <!---------------------------------------------------------------------------------------------------------->
 <!------------------------------------------ Main body ------------------------------------------------------>
-# Summary
-**We developed a foundation model for human activity recognition (HAR) using self-supervision. The pre-trained model is available to build high-performance human activity classifiers using accelerometer data.**
+## Summary in plain language
+Sleep is essential to life. Humans spend 1/3 of their life in sleep, and yet we don't pay enough attention to it.
+There is this social stigma in society that successful people don't need to need much sleep as long as the sleep
+quality is good. However, our study shows that short sleepers have a higher risk of mortality compared to
+participants with normal sleep duration regardless of their sleep efficiency, a metric for sleep quality and continuity.
+Immediate public health attention is required to better understand the role of sleep in health and diseases.
 
+To help researchers and clinicians to study sleep, we developed a deep learning model that can classify sleep stages
+that can be used in both small-scale clinical populations and large-scale population studies. We further demonstrated
+how one could use the model in a large-scale population study to study the association between sleep and mortality.
+Others can use the same study design to investigate the association between sleep and other health outcomes of interest.
 
-`harnet10` takes data that is 10-second long windows with 30hz of frequency. `harnet30` for 30-second long windows will be avaliable at
-a later date.
-
-
-We used self-supervision to train a ResNet16 V2 with 1D convolution. We inverted (arrow of the time), permuted, and time-warped the accelerometer data.
-
-![alt text](assets/ssl_diagram.png "Overview")
-
-
-## Using the pre-trained model
-```python
-import torch
-import numpy as np
-
-repo = 'OxWearables/ssl-wearables'
-harnet10 = torch.hub.load(repo, 'harnet10', class_num=5, pretrained=True)
-
-x = np.random.rand(1, 3, 300)
-x = torch.FloatTensor(x)
-harnet10(x)
+You can use all the models developed in this project to derive sleep parameters in your studies by using the
+[asleep](https://github.com/OxWearables/asleep) package.
+## Using to use the package 
+### Installation
+```shell
+pip install asleep
 ```
+
+### Usage
+```shell
+# Process an AX3 file
+$ get_sleep sample.cwa
+
+# Or an ActiGraph file
+$ get_sleep sample.gt3x
+
+# Or a GENEActiv file
+$ get_sleep sample.bin
+
+# Or a CSV file (see data format below)
+$ get_sleep sample.csv
+```
+
+
+# Study design
+
+1. **Pre-trained a deep neural network using a self-supervised learning with 700,000 person-days of data in the UK Biobank.**
+
+2. **Developed a sleep stage classifier using 1,448 nights of polysomnography and accelerometry data from three countries (Australia, the UK, and the USA).**
+
+3. **Deployed the sleep stage classifier on the UK Biobank to study the association of sleep duration and sleep efficiency with all-cause mortality.**
+
+![alt text](assets/ssl.jpg "Overview")
+
+
 
 # Results
 
-### The pre-trained model can consistenly improve activity classification performance
-![alt text](assets/baseline.png "limited_subject")
+###  Deep-learning-based sleep classification using accelerometers has a fair to moderate agreement with polysomnography.
+![alt text](assets/bland.jpg "limited_subject")
 
 
 
-### Self-supervised pre-training out-performs supervised pre-training
-![alt text](assets/transfer.png "limited_subject")
-
-
-### Pre-trained models achieves high performance even with limited labelled datasets
-![alt text](assets/subject.png "limited_subject")
+### Sleep variations in the UK Biobank
+![alt text](assets/ukb.jpg "limited_subject")
 
 
 
-
-### The learnt features can discriminate activity intensities and frequencies without fine-tuning
-![alt text](assets/visu.png "cluster")
-
-
+### Short sleep duration is associated with mortality regardless of sleep efficiency
+![alt text](assets/sleep.jpg "cluster")
 
 
 
@@ -93,13 +124,16 @@ harnet10(x)
 ## Bibliography
 
 ```tex
-@misc{yuan2022selfsupervised,
-      title={Self-supervised Learning for Human Activity Recognition Using 700,000 Person-days of Wearable Data}, 
-      author={Hang Yuan and Shing Chan and Andrew P. Creagh and Catherine Tong and David A. Clifton and Aiden Doherty},
-      year={2022},
-      eprint={2206.02909},
-      archivePrefix={arXiv},
-      primaryClass={eess.SP}
+@article {Yuan2023.07.07.23292251,
+	author = {Hang Yuan and Tatiana Plekhanova and Rosemary Walmsley and Amy C. Reynolds and Kathleen J. Maddison and Maja Bucan and Philip Gehrman and Alex Rowlands and David W. Ray and Derrick Bennett and Joanne McVeigh and Leon Straker and Peter Eastwood and Simon D. Kyle and Aiden Doherty},
+	title = {Self-supervised learning of accelerometer data provides new insights for sleep and its association with mortality},
+	elocation-id = {2023.07.07.23292251},
+	year = {2023},
+	doi = {10.1101/2023.07.07.23292251},
+	publisher = {Cold Spring Harbor Laboratory Press},
+	URL = {https://www.medrxiv.org/content/early/2023/07/08/2023.07.07.23292251},
+	eprint = {https://www.medrxiv.org/content/early/2023/07/08/2023.07.07.23292251.full.pdf},
+	journal = {medRxiv}
 }
 ```
 
@@ -107,6 +141,4 @@ harnet10(x)
 ## Acknowledgement
 
 
-> We would like to thank all the helpful discussions and feedback we recevied from Aidan Acquah, Gert Mertes, Henrique Aguiar, Andres Tamm, and Korsuk Sirinukunwattana.
->This research has been conducted using the UK Biobank Resource under Application Number 59070. This work is supported by: Novo Nordisk (HY, AD); the Wellcome Trust [223100/Z/21/Z] (AD); GlaxoSmithKline (AC, DC); the British Heart Foundation Centre of Research Excellence [RE/18/3/34214] (AD); the National Institute for Health Research (NIHR) Oxford Biomedical Research Centre (AD, DC); and Health Data Research UK, an initiative funded by UK Research and Innovation, Department of Health and Social Care (England) and the devolved administrations, and leading medical research charities. It is also supported by the UK’s Engineering and Physical Sciences Research Council (EPSRC) with grants EP/S001530/1 (the MOA project) and EP/R018677/1 (the OPERA project); and the European Research Council (ERC) via the REDIAL project (Grant Agreement ID: 805194), and industrial funding from Samsung AI.
-> We would also like to thank Alex Rowlands and Mike Catt, who kindly shared their activity dataset with us. Their project was funded by a grant from Unilever Discover to the School of Sports and Health Sciences, University of Exeter.
+> We would like to thank all the study participants and collaborators and also Novo Nordisk for providing the primary funding for this project.

@@ -1,0 +1,68 @@
+I"¤<!------------------------------------------ Hyperlinks ---------------------------------------------------->
+<!--- If you want to update links for your code/paper/demo, modify that in _includes/page-header.html   -->
+<!------------------------------------- End of hyperlinks -------------------------------------------------->
+
+<!---------------------------------------------------------------------------------------------------------->
+<!----------------------------------------- Abstract ------------------------------------------------------->
+<hr />
+
+<p style="text-align: center;">Abstract</p>
+<p>
+    <b>Background</b>: Sleep is essential to life. Accurate measurement and classification of sleep/wake and sleep stages is important in clinical studies for sleep disorder diagnoses and in the interpretation of data from consumer devices for monitoring physical and mental well-being. Existing non-polysomnography sleep classification techniques mainly rely on heuristic methods developed in relatively small cohorts. Thus, we aimed to establish the accuracy of wrist-worn accelerometers for sleep stage classification and subsequently describe the association between sleep duration and efficiency (proportion of total time asleep when in bed) with mortality outcomes. 
+    
+    <br /><br />
+    <b>Methods</b>: We developed and validated a self-supervised deep neural network for sleep stage classification using concurrent laboratory-based polysomnography and accelerometry data from three countries (Australia, the UK, and the USA). The model was validated within-cohort using subject-wise five-fold cross-validation for sleep-wake classification and in a three-class setting for sleep stage classification {wake, rapid-eye-movement sleep (REM), non-rapid-eye-movement sleep (NREM)} and by external validation. We assessed the face validity of our model for population inference by applying the model to the UK Biobank with ~100,000 participants, each of whom wore a wristband for up to seven days. The derived sleep parameters were used in a Cox regression model to study the association of sleep duration and sleep efficiency with all-cause mortality.
+
+    <br /><br />
+    <b>Findings</b>: After exclusion, 1,448 participant nights of data were used to train the sleep classifier. The difference between polysomnography and the model classifications on the external validation was 34.7 minutes (95% limits of agreement (LoA):  -37.8 to 107.2 minutes) for total sleep duration, 2.6 minutes for REM duration (95% LoA:  -68.4 to 73.4 minutes) and 32.1 minutes (95% LoA:  -54.4 to 118.5 minutes) for NREM duration. The derived sleep architecture estimate in the UK Biobank sample showed good face validity. Among 66,214 UK Biobank participants, 1,642 mortality events were observed. Short sleepers (&lt;6 hours) had a higher risk of mortality compared to participants with normal sleep duration (6 to 7.9 hours), regardless of whether they had low sleep efficiency (Hazard ratios (HRs): 1.69; 95% confidence intervals (CIs): 1.28 to 2.24 ) or high sleep efficiency (HRs: 1.42; 95% CIs: 1.14  to 1.77).
+    
+    <br /><br />
+    <b>Interpretation</b>: Deep-learning-based sleep classification using accelerometers has a fair to moderate agreement with polysomnography. Our findings suggest that having short overnight sleep confers mortality risk irrespective of sleep continuity.
+
+  </p>
+<hr />
+
+<!--------------------------------------- End abstract ----------------------------------------------------->
+<!---------------------------------------------------------------------------------------------------------->
+
+<!---------------------------------------------------------------------------------------------------------->
+<!------------------------------------------ Main body ------------------------------------------------------>
+<h1 id="study-design">Study design</h1>
+<p><strong>We developed a foundation model for human activity recognition (HAR) using self-supervision. The pre-trained model is available to build high-performance human activity classifiers using accelerometer data.</strong></p>
+
+<p><img src="assets/ssl_diagram.png" alt="alt text" title="Overview" /></p>
+
+<h1 id="results">Results</h1>
+
+<h3 id="agreement-between-the-sleepnet-and-the-ground-truth-polysomnography">Agreement between the SleepNet and the ground truth polysomnography</h3>
+<p><img src="assets/baseline.png" alt="alt text" title="limited_subject" /></p>
+
+<h3 id="self-supervised-pre-training-out-performs-supervised-pre-training">Self-supervised pre-training out-performs supervised pre-training</h3>
+<p><img src="assets/transfer.png" alt="alt text" title="limited_subject" /></p>
+
+<h3 id="sleep-variations-in-the-uk-biobank">Sleep variations in the UK Biobank</h3>
+<p><img src="assets/subject.png" alt="alt text" title="limited_subject" /></p>
+
+<h3 id="short-sleep-duration-is-associated-with-mortality-regardless-of-sleep-efficiency">Short sleep duration is associated with mortality regardless of sleep efficiency</h3>
+<p><img src="assets/visu.png" alt="alt text" title="cluster" /></p>
+
+<h2 id="bibliography">Bibliography</h2>
+
+<div class="language-tex highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@misc<span class="p">{</span>yuan2022selfsupervised,
+      title=<span class="p">{</span>Self-supervised Learning for Human Activity Recognition Using 700,000 Person-days of Wearable Data<span class="p">}</span>, 
+      author=<span class="p">{</span>Hang Yuan and Shing Chan and Andrew P. Creagh and Catherine Tong and David A. Clifton and Aiden Doherty<span class="p">}</span>,
+      year=<span class="p">{</span>2022<span class="p">}</span>,
+      eprint=<span class="p">{</span>2206.02909<span class="p">}</span>,
+      archivePrefix=<span class="p">{</span>arXiv<span class="p">}</span>,
+      primaryClass=<span class="p">{</span>eess.SP<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h2 id="acknowledgement">Acknowledgement</h2>
+
+<blockquote>
+  <p>We would like to thank all the helpful discussions and feedback we recevied from Aidan Acquah, Gert Mertes, Henrique Aguiar, Andres Tamm, and Korsuk Sirinukunwattana.
+This research has been conducted using the UK Biobank Resource under Application Number 59070. This work is supported by: Novo Nordisk (HY, AD); the Wellcome Trust [223100/Z/21/Z] (AD); GlaxoSmithKline (AC, DC); the British Heart Foundation Centre of Research Excellence [RE/18/3/34214] (AD); the National Institute for Health Research (NIHR) Oxford Biomedical Research Centre (AD, DC); and Health Data Research UK, an initiative funded by UK Research and Innovation, Department of Health and Social Care (England) and the devolved administrations, and leading medical research charities. It is also supported by the UKâ€™s Engineering and Physical Sciences Research Council (EPSRC) with grants EP/S001530/1 (the MOA project) and EP/R018677/1 (the OPERA project); and the European Research Council (ERC) via the REDIAL project (Grant Agreement ID: 805194), and industrial funding from Samsung AI.
+We would also like to thank Alex Rowlands and Mike Catt, who kindly shared their activity dataset with us. Their project was funded by a grant from Unilever Discover to the School of Sports and Health Sciences, University of Exeter.</p>
+</blockquote>
+:ET

@@ -1,34 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-  
-  <head>
-  <meta charset="UTF-8">
-  <title>Self-supervised learning of accelerometer data provides new insights for sleep and its association with mortality</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#157878">
-  <link rel="stylesheet" href="/ssl-wearables/css/normalize.css">
-  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
-  <link rel="stylesheet" href="/ssl-wearables/css/cayman.css">
-</head>
-
-  <body>
-    <section class="page-header">
-  <h1 class="project-name">Self-supervised learning of accelerometer data provides new insights for sleep and its association with mortality</h1>
-  <h2 class="project-tagline">Hang Yuan<sup>1,2</sup>, Tatiana Plekhanova<sup>3</sup>, Rosemary Walmsley<sup>1,2</sup>, Amy C. Reynolds<sup>5</sup>, Kathleen J. Maddison<sup>7</sup>, Maja Bucan<sup>6</sup>, Philip Gehrman<sup>8</sup>, Alex Rowland<sup>3</sup>, David W. Ray<sup>9</sup>,Derrick Bennett<sup>1,2</sup>, Joanne McVeigh<sup>10</sup>, Leon Straker<sup>10</sup>, Peter Eastwood<sup>11</sup>, Simon D. Kyle<sup>12</sup>, Aiden Doherty<sup>1,2</sup></h2>
-  <h2 class="project-tagline">Nuffield Department of Population Health, University of Oxford<sup>1</sup>, Big Data Institute, University of Oxford <sup>2</sup>, University of Leicester, Diabetes Research Centre, Leicester <sup>3</sup>, Department of Engineering Science, University of Oxford  <sup>4</sup>, Flinders University, College of Medicine and Public Health <sup>5</sup>, University of Pennsylvania, Department of Genetics, Philadelphia<sup>6</sup>, University of Western Australia, Centre of Sleep Science, School of Human Sciences <sup>7</sup>, University of Pennsylvania, Department of Psychiatry<sup>8</sup>, University of Oxford, Oxford Centre for Diabetes, Endocrinology and Metabolism, Oxford Kavli Centre for Nanoscience Discovery<sup>9</sup>, Curtin University, Curtin School of Allied Health<sup>10</sup>, Health Futures Institute, Murdoch University<sup>11</sup>, Sir Jules Thorn Sleep & Circadian Neuroscience Institute, Nuffield Department of Clinical Neurosciences, University of Oxford<sup>12</sup></h2>
-
-  <!--Remove the line(s) below if you don't need the buttons. -->
-  <a href="https://github.com/OxWearables/asleep" class="btn">Code</a>
-  <a href="https://www.medrxiv.org/content/10.1101/2023.07.07.23292251v1.article-info" class="btn">Paper</a>
-</section>
-
-
-
-
-
-    <section class="main-content">
-      
-      <!------------------------------------------ Hyperlinks ---------------------------------------------------->
+I"K#<!------------------------------------------ Hyperlinks ---------------------------------------------------->
 <!--- If you want to update links for your code/paper/demo, modify that in _includes/page-header.html   -->
 <!------------------------------------- End of hyperlinks -------------------------------------------------->
 
@@ -137,11 +107,4 @@ Others can use the same study design to investigate the association between slee
 <blockquote>
   <p>We would like to thank all the study participants and collaborators and also Novo Nordisk for providing the primary funding for this project.</p>
 </blockquote>
-
-
-      
-
-    </section>
-
-  </body>
-</html>
+:ET

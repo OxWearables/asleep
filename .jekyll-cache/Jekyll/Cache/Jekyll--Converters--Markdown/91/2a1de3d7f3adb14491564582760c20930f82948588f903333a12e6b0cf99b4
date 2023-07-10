@@ -1,34 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-  
-  <head>
-  <meta charset="UTF-8">
-  <title>Self-supervised learning of accelerometer data provides new insights for sleep and its association with mortality</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#157878">
-  <link rel="stylesheet" href="/ssl-wearables/css/normalize.css">
-  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
-  <link rel="stylesheet" href="/ssl-wearables/css/cayman.css">
-</head>
-
-  <body>
-    <section class="page-header">
-  <h1 class="project-name">Self-supervised learning of accelerometer data provides new insights for sleep and its association with mortality</h1>
-  <h2 class="project-tagline">Hang Yuan<sup>1,2</sup>, Tatiana Plekhanova<sup>3</sup>, Rosemary Walmsley<sup>1,2</sup>, Amy C. Reynolds<sup>5</sup>, Kathleen J. Maddison<sup>7</sup>, Maja Bucan<sup>6</sup>, Philip Gehrman<sup>8</sup>, Alex Rowland<sup>3</sup>, David W. Ray<sup>9</sup>,Derrick Bennett<sup>1,2</sup>, Joanne McVeigh<sup>10</sup>, Leon Straker<sup>10</sup>, Peter Eastwood<sup>11</sup>, Simon D. Kyle<sup>12</sup>, Aiden Doherty<sup>1,2</sup></h2>
-  <h2 class="project-tagline">Nuffield Department of Population Health, University of Oxford<sup>1</sup>, Big Data Institute, University of Oxford <sup>2</sup>, University of Leicester, Diabetes Research Centre, Leicester <sup>3</sup>, Department of Engineering Science, University of Oxford  <sup>4</sup>, Flinders University, College of Medicine and Public Health <sup>5</sup>, University of Pennsylvania, Department of Genetics, Philadelphia<sup>6</sup>, University of Western Australia, Centre of Sleep Science, School of Human Sciences <sup>7</sup>, University of Pennsylvania, Department of Psychiatry<sup>8</sup>, University of Oxford, Oxford Centre for Diabetes, Endocrinology and Metabolism, Oxford Kavli Centre for Nanoscience Discovery<sup>9</sup>, Curtin University, Curtin School of Allied Health<sup>10</sup>, Health Futures Institute, Murdoch University<sup>11</sup>, Sir Jules Thorn Sleep & Circadian Neuroscience Institute, Nuffield Department of Clinical Neurosciences, University of Oxford<sup>12</sup></h2>
-
-  <!--Remove the line(s) below if you don't need the buttons. -->
-  <a href="https://github.com/OxWearables/asleep" class="btn">Code</a>
-  <a href="https://www.medrxiv.org/content/10.1101/2023.07.07.23292251v1.article-info" class="btn">Paper</a>
-</section>
-
-
-
-
-
-    <section class="main-content">
-      
-      <!------------------------------------------ Hyperlinks ---------------------------------------------------->
+I"r<!------------------------------------------ Hyperlinks ---------------------------------------------------->
 <!--- If you want to update links for your code/paper/demo, modify that in _includes/page-header.html   -->
 <!------------------------------------- End of hyperlinks -------------------------------------------------->
 
@@ -57,18 +27,6 @@
 
 <!---------------------------------------------------------------------------------------------------------->
 <!------------------------------------------ Main body ------------------------------------------------------>
-<h2 id="summary-in-plain-language">Summary in plain language</h2>
-<p>Sleep is essential to life. Humans spend 1/3 of their life in sleep, and yet we don’t pay enough attention to it.
-There is this social stigma in society that successful people don’t need to need much sleep as long as the sleep
-quality is good. However, our study shows that short sleepers have a higher risk of mortality compared to
-participants with normal sleep duration regardless of their sleep efficiency, a metric for sleep quality and continuity.
-Immediate public health attention is required to better understand the role of sleep in health and diseases.</p>
-
-<p>To help researchers and clinicians to study sleep, we developed a deep learning model that can classify sleep stages
-that can be used in both small-scale clinical populations and large-scale population studies. We further demonstrated
-how one could use the model in a large-scale population study to study the association between sleep and mortality.
-Others can use the same study design to investigate the association between sleep and other health outcomes of interest.</p>
-
 <p>You can use all the models developed in this project to derive sleep parameters in your studies by using the
 <a href="https://github.com/OxWearables/asleep">asleep</a> package.</p>
 <h2 id="using-to-use-the-package">Using to use the package</h2>
@@ -108,14 +66,17 @@ Others can use the same study design to investigate the association between slee
 
 <h1 id="results">Results</h1>
 
-<h3 id="deep-learning-based-sleep-classification-using-accelerometers-has-a-fair-to-moderate-agreement-with-polysomnography">Deep-learning-based sleep classification using accelerometers has a fair to moderate agreement with polysomnography.</h3>
-<p><img src="assets/bland.jpg" alt="alt text" title="limited_subject" /></p>
+<h3 id="agreement-between-the-sleepnet-and-the-ground-truth-polysomnography">Agreement between the SleepNet and the ground truth polysomnography</h3>
+<p><img src="assets/baseline.png" alt="alt text" title="limited_subject" /></p>
+
+<h3 id="self-supervised-pre-training-out-performs-supervised-pre-training">Self-supervised pre-training out-performs supervised pre-training</h3>
+<p><img src="assets/transfer.png" alt="alt text" title="limited_subject" /></p>
 
 <h3 id="sleep-variations-in-the-uk-biobank">Sleep variations in the UK Biobank</h3>
-<p><img src="assets/ukb.jpg" alt="alt text" title="limited_subject" /></p>
+<p><img src="assets/subject.png" alt="alt text" title="limited_subject" /></p>
 
 <h3 id="short-sleep-duration-is-associated-with-mortality-regardless-of-sleep-efficiency">Short sleep duration is associated with mortality regardless of sleep efficiency</h3>
-<p><img src="assets/sleep.jpg" alt="alt text" title="cluster" /></p>
+<p><img src="assets/visu.png" alt="alt text" title="cluster" /></p>
 
 <h2 id="bibliography">Bibliography</h2>
 
@@ -137,11 +98,4 @@ Others can use the same study design to investigate the association between slee
 <blockquote>
   <p>We would like to thank all the study participants and collaborators and also Novo Nordisk for providing the primary funding for this project.</p>
 </blockquote>
-
-
-      
-
-    </section>
-
-  </body>
-</html>
+:ET

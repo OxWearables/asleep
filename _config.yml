@@ -8,7 +8,7 @@ locale:       "en"
 # About/contact
 author:
   name:       OxWearables
-  url:        https://oxwearables.github.io/ssl-wearables/
+  url:        https://oxwearables.github.io/asleep/
 
 # Gems
 gems:
