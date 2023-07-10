@@ -1,0 +1,18 @@
+# Setup
+title:        OxWearables SSL-wearables
+tagline:      Communicate your research and beyond
+baseurl:      "/ssl-wearables"
+paginate:     1
+locale:       "en"
+
+# About/contact
+author:
+  name:       OxWearables
+  url:        https://oxwearables.github.io/ssl-wearables/
+
+# Gems
+gems:
+  - jekyll-paginate
+
+#Others
+markdown: kramdown
