@@ -89,7 +89,19 @@ time, x, y, z
 
 # Citation
 If you want to use our package for your project, please cite our paper below:
-TBD
+```bibtex
+@article {Yuan2023.07.07.23292251,
+	author = {Hang Yuan and Tatiana Plekhanova and Rosemary Walmsley and Amy C. Reynolds and Kathleen J. Maddison and Maja Bucan and Philip Gehrman and Alex Rowlands and David W. Ray and Derrick Bennett and Joanne McVeigh and Leon Straker and Peter Eastwood and Simon D. Kyle and Aiden Doherty},
+	title = {Self-supervised learning of accelerometer data provides new insights for sleep and its association with mortality},
+	elocation-id = {2023.07.07.23292251},
+	year = {2023},
+	doi = {10.1101/2023.07.07.23292251},
+	publisher = {Cold Spring Harbor Laboratory Press},
+	URL = {https://www.medrxiv.org/content/early/2023/07/08/2023.07.07.23292251},
+	eprint = {https://www.medrxiv.org/content/early/2023/07/08/2023.07.07.23292251.full.pdf},
+	journal = {medRxiv}
+}
+```
 
 # Acknowledgements
 We would like to thank all our code contributors, manuscript co - authors, and research participants for their help in making this work possible. The
