@@ -95,10 +95,12 @@ def setup_dataset(X, pid, cfg, is_train=False):
 
 
 def config_device(cfg):
-    if cfg.gpu != -1:
-        my_device = "cuda:" + str(cfg.gpu)
+    if cfg.gpu != 'cpu':
+        my_device = str(cfg.gpu)
+        print ("pytorch device: "+my_device)
     else:
         my_device = "cpu"
+        print ("pytorch device defaulting to 'cpu'")
     return my_device
 
 
@@ -198,7 +200,7 @@ def sleepnet_inference(X, pid, weight_path, cfg, local_repo_path=""):
     return aligned_y_pred, test_pid
 
 
-def start_sleep_net(X, pid, data_root, weight_path, device_id=-1, local_repo_path=""):
+def start_sleep_net(X, pid, data_root, weight_path, device_id='cpu', local_repo_path=""):
     initialize(config_path="conf")
     cfg = compose(
         "config_eval",
