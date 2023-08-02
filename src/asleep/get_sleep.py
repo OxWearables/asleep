@@ -312,7 +312,7 @@ def main():
 
     y_pred, test_pids = start_sleep_net(
         master_acc, master_npids, args.outdir,
-        args.model_weight_path, local_repo_path=args.local_repo_path)
+        args.model_weight_path, local_repo_path=args.local_repo_path, device_id= args.pytorch_device)
     sleepnet_output = binary_y
 
     for block_id in range(len(all_sleep_wins_df)):
