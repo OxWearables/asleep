@@ -97,7 +97,7 @@ def setup_dataset(X, pid, cfg, is_train=False):
 def config_device(cfg):
     if cfg.gpu != 'cpu':
         my_device = str(cfg.gpu)
-        print("pytorch device: "+ my_device)
+        print("pytorch device: " + my_device)
     else:
         my_device = "cpu"
         print("pytorch device defaulting to 'cpu'")
