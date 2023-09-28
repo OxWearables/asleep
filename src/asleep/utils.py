@@ -322,9 +322,10 @@ def data_long2wide(X, times, non_wear):
     """
     # get multiple of 900
     remainder = X.shape[0] % 900
-    X = X[:-remainder]
-    times = times[:-remainder]
-    non_wear = non_wear[:-remainder]
+    if remainder != 0:
+        X = X[:-remainder]
+        times = times[:-remainder]
+        non_wear = non_wear[:-remainder]
 
     x = X[:, 0]
     y = X[:, 1]
