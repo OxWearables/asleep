@@ -148,10 +148,7 @@ def predict(model, data_loader, device,
             pid_list.extend(pid)
 
     predictions_list = torch.cat(predictions_list)
-    if name == 'prediction':
-        true_list = predictions_list
-    else:
-        true_list = torch.Tensor([1, 2, 3])
+    true_list = torch.cat(true_list)
 
     if output_logits:
         return (

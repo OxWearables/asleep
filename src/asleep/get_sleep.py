@@ -116,8 +116,11 @@ def transform_data2model_input(
         times = data['time'].to_numpy()
         non_wear = data['non_wear'].to_numpy()
         data = data[['x', 'y', 'z']].to_numpy()
+
         data2model, times, non_wear = data_long2wide(data, times, non_wear)
 
+        # set trace here to debug
+        import pdb; pdb.set_trace()
         np.save(data2model_path, data2model)
         np.save(times_path, times)
         np.save(non_wear_path, non_wear)
