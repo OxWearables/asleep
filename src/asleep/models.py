@@ -193,7 +193,7 @@ class SleepWindowSSL:
         model.to(self.device)
 
         _, y_pred, _ = sslmodel.predict(
-            model, dataloader, self.device, output_logits=False)
+            model, dataloader, self.device, output_logits=False, name='prediction')
 
         y_pred = self.hmms.predict(y_pred, groups=groups)
 

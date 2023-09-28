@@ -115,7 +115,8 @@ def get_sslnet(tag='v1.0.0', pretrained=False):
     return sslnet
 
 
-def predict(model, data_loader, device, output_logits=False):
+def predict(model, data_loader, device,
+            output_logits=False, name='train'):
     """
     Iterate over the dataloader and do prediction with a pytorch model.
     :param nn.Module model: pytorch Module
@@ -145,8 +146,12 @@ def predict(model, data_loader, device, output_logits=False):
                 pred_y = torch.argmax(logits, dim=1)
                 predictions_list.append(pred_y.cpu())
             pid_list.extend(pid)
-    true_list = torch.cat(true_list)
+
     predictions_list = torch.cat(predictions_list)
+    if name == 'prediction':
+        true_list = predictions_list
+    else:
+        true_list = torch.Tensor([1, 2, 3])
 
     if output_logits:
         return (
