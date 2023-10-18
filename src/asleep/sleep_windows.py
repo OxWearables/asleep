@@ -254,8 +254,6 @@ def time_series2sleep_blocks(
     end_date = my_df["time"][len(my_df) - 1]
 
     my_intervals = get_day_intervals(start_date, end_date, date_format)
-
-
     all_sleep_wins, \
         sleep_wins_long, \
         interval_start, \
