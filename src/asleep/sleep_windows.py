@@ -270,6 +270,7 @@ def get_day_intervals(start_date, end_date, date_format):
     my_day_end = pd.to_datetime(day_end_str, format=date_format)
     my_day_start = start_date.replace(
         hour=12, minute=0, second=0, microsecond=0)
+    my_day_start = my_day_start - timedelta(hours=24)
 
     while my_day_end < end_date:
         my_day_end = my_day_start + timedelta(hours=23, minutes=59, seconds=59)
