@@ -12,7 +12,7 @@ The key features of this package are as follows:
 
 
 # Dependencies
-- Python 3.8+
+- Python 3.8
 - Java 8 (1.8.0) or greater
 
 Check with:
