@@ -88,7 +88,7 @@ def generate_sleep_parameters(
         start_t = row['start']
         end_t = row['end']
 
-        time_filter = (times >= start_t) & (times < end_t)
+        time_filter = (times >= start_t) & (times <= end_t)
         current_day_y_pred = predictions_df['raw_label'][time_filter].values
         current_day_times = times[time_filter]
 

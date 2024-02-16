@@ -262,7 +262,7 @@ def main():
         help="Min wear time in hours to be eligible for summary statistics "
              "computation. The sleepnet paper uses 22",
         type=int,
-        default=0)
+        default=22)
     parser.add_argument(
         "--time_shift",
         type=str,
