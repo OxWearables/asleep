@@ -98,6 +98,7 @@ def find_sleep_windows(sleep_blocks):
             if current_start_master_idx != -1:
                 all_sleep_blocks.append(
                     [current_start_master_idx, current_end_master_idx])
+                current_start_master_idx = -1
             continue
         pre_class = win[CLASS_POS]
 
