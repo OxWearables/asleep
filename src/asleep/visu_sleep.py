@@ -37,7 +37,7 @@ def main():
     # check all the files are there
     prediction_path = os.path.join(args.filepath, 'predictions.csv')
     sleep_blocks_path = os.path.join(args.filepath, 'sleep_block.csv')
-    raw_x_path = os.path.join('outputs/test', 'data2model.npy')
+    raw_x_path = os.path.join(args.filepath, 'data2model.npy')
     plot_path = os.path.join(args.filepath, 'sleep.png')
 
     if not os.path.exists(prediction_path):
@@ -62,6 +62,8 @@ def main():
     exact_date_df = sleep_block_df.loc[sleep_block_df['is_longest_block']].copy()
     exact_date_df['interval_start'] = pd.to_datetime(exact_date_df['interval_start'])
     exact_date_df['interval_end'] = pd.to_datetime(exact_date_df['interval_end'])
+    exact_date_df['start'] = pd.to_datetime(exact_date_df['start'])
+    exact_date_df['end'] = pd.to_datetime(exact_date_df['end'])
 
     y_df['enmo'] = raw_enmo
     y_df['time'] = pd.to_datetime(y_df['time'])
@@ -81,6 +83,8 @@ def main():
     for _, row in exact_date_df.iterrows():
         day_start = row['interval_start']
         day_end = row['interval_end']
+        long_sleep_start = row['start']
+        long_sleep_end = row['end']
         day_df = y_df[(y_df['time'] >= day_start) & (y_df['time'] <= day_end)].copy()
         day_df['is_nonwear'] = day_df['enmo'] == 0
         day_df.loc[day_df['is_nonwear'], 'sleep_wake'] = 'non_wear'
@@ -94,6 +98,11 @@ def main():
         ax.plot(day_df['time'], day_df['enmo'], color='k', linewidth=1.5)
         ax.set_ylim(0, 2)
         ax.set_xlim(day_start, day_end)
+
+        plt.vlines(x=long_sleep_start, ymin=0, ymax=2,
+                   colors='yellow')
+        plt.vlines(x=long_sleep_end, ymin=0, ymax=2,
+                   colors='yellow')
 
         a = np.array([is_sleep, is_wake, is_nonwear]) * MAXRANGE
 
