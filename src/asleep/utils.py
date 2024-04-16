@@ -75,7 +75,7 @@ def read(filepath, resample_hz='uniform'):
 
         data, info = actipy.read_device(
             filepath,
-            lowpass_hz=20,
+            lowpass_hz=15,
             calibrate_gravity=True,
             detect_nonwear=False,
             resample_hz=resample_hz,
