@@ -71,8 +71,15 @@ time
 2013 - 10 - 23    432.2
 ...
 
-Output: outputs / sample/
+Output: outputs /sample/
 ```
+
+# Visualisation
+You can visualise the sleep parameters using the following command:
+```shell
+$ visu_sleep PATH_TO_OUTPUT_FOLDER
+```
+
 
 # Processing CSV files
 If a CSV file is provided, it must have the following header: time, x, y, z.
