@@ -64,16 +64,17 @@ def fill_sleep_block_gaps(sleep_block_idxes, counter):
 
 def count_sleep_block_gap(sleep_block_idxes, counter, epoch_length=30):
     # epoch_length sec
+    # find the gap between sleep blocks that are less than 30 mins apart
     gap2fill = []
     if len(sleep_block_idxes) > 1:
         first_block = counter[sleep_block_idxes[0]]
         end_of_block_idx = first_block[IDX_POS] + first_block[LEN_POS]
-        min_one_hour_block_diff = 60 * 60 / epoch_length
+        min_30_mins_block_diff = 30 * 60 / epoch_length
         i = 1
         while i < len(sleep_block_idxes):
             current_block = counter[sleep_block_idxes[i]]
             dist2pre_block = current_block[IDX_POS] - end_of_block_idx
-            if dist2pre_block <= min_one_hour_block_diff:
+            if dist2pre_block <= min_30_mins_block_diff:
                 gap2fill.append(i - 1)
             end_of_block_idx = current_block[IDX_POS] + current_block[LEN_POS]
             i += 1

@@ -139,8 +139,8 @@ def main():
     ax.axis('off')
     legend_patches = [mlines.Line2D([], [], color='k', label='acceleration')]
 
-    labels = ['sleep', 'wake', 'non_wear']
-    colors = ['#785EF0', '#FE6100', 'gray']
+    labels = ['sleep', 'wake', 'non_wear', 'time_in_bed']
+    colors = ['#785EF0', '#FE6100', 'gray', 'yellow']
 
     for label, color in zip(labels, colors):
         legend_patches.append(mpatches.Patch(color=color, label=label))
