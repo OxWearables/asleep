@@ -71,8 +71,8 @@ def get_parsed_data(raw_data_path, info_data_path, resample_hz, args):
         data = data.reset_index()
 
         # apply time shift
-        start_time = pd.to_datetime(info.get("StartTime", data.index[START_TIME_IDX]))
-        end_time = pd.to_datetime(info.get("EndTime", data.index[END_TIME_IDX]))
+        start_time = pd.to_datetime(info.get("StartTime", data["time"].iloc[START_TIME_IDX]))
+        end_time = pd.to_datetime(info.get("EndTime", data["time"].iloc[END_TIME_IDX]))
         info['StartTime'] = start_time + datetime.timedelta(hours=time_shift)
         info['EndTime'] = end_time + datetime.timedelta(hours=time_shift)
         info['StartTime'] = info['StartTime'].strftime('%Y-%m-%d %H:%M:%S')
