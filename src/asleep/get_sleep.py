@@ -38,6 +38,7 @@ NON_WEAR_PREDICTION_FLAG = -1
 START_TIME_IDX = 0
 END_TIME_IDX = -1
 
+
 def load_model(model_path, force_download=False):
     """ Load trained model. Download if not exists. """
 
