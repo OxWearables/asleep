@@ -35,6 +35,9 @@ will always be -1.
 NON_WEAR_THRESHOLD = 3  # H
 NON_WEAR_PREDICTION_FLAG = -1
 
+START_TIME_IDX = 0
+END_TIME_IDX = -1
+
 
 def load_model(model_path, force_download=False):
     """ Load trained model. Download if not exists. """
@@ -69,8 +72,8 @@ def get_parsed_data(raw_data_path, info_data_path, resample_hz, args):
         data = data.reset_index()
 
         # apply time shift
-        start_time = pd.to_datetime(info['StartTime'])
-        end_time = pd.to_datetime(info['EndTime'])
+        start_time = pd.to_datetime(info.get("StartTime", data["time"].iloc[START_TIME_IDX]))
+        end_time = pd.to_datetime(info.get("EndTime", data["time"].iloc[END_TIME_IDX]))
         info['StartTime'] = start_time + datetime.timedelta(hours=time_shift)
         info['EndTime'] = end_time + datetime.timedelta(hours=time_shift)
         info['StartTime'] = info['StartTime'].strftime('%Y-%m-%d %H:%M:%S')
