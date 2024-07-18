@@ -148,6 +148,20 @@ def transform_data2model_input(
         non_wear = np.load(non_wear_path)
     return data2model, times, non_wear
 
+def mean_temp_and_light(data):
+    # Calculates mean temperature and light for each 30s window
+    print("Calculating mean temperature and light for each 30s interval.")
+    
+    data['time'] = pd.to_datetime(data['time'])
+    # Grouping by time
+    grouped = data.groupby(pd.Grouper(key='time', freq='30S', origin=data['time'].min()))
+    # Calculating the mean temperature and light for each group
+    mean_values = grouped[['temperature', 'light']].mean().iloc[:-1]
+
+    temp = mean_values["temperature"].to_numpy()
+    light = mean_values["light"].to_numpy()
+
+    return(temp, light)
 
 def get_sleep_windows(data2model, times, non_wear, args):
     # data2model: N x 3 x 900
@@ -241,6 +255,10 @@ def main():
         help="Remove intermediate files to save space but it "
              "will take longer to run the next time.")
     parser.add_argument(
+        "--report_light_and_temp",
+        action="store_true",
+        help="If true, it will add mean temperature and light columns to the predictions.csv file.")
+    parser.add_argument(
         "--pytorch_device",
         "-d",
         help="Pytorch device to use, e.g.: 'cpu' or 'cuda:0' (for SSL only)",
@@ -305,6 +323,12 @@ def main():
     print("times shape: {}".format(times.shape))
     print("Non_wear flag shape: {}".format(non_wear.shape))
 
+    # 1.2 Get the mean temperature and light (optional)
+    if args.report_light_and_temp:
+        temp, light = mean_temp_and_light(data)
+        print("temperature shape: {}".format(temp.shape))
+        print("light shape: {}".format(light.shape))
+
     # times and non-wear flag need to be stored for visualization
     if args.remove_intermediate_files:
         os.remove(data2model_path)
@@ -346,14 +370,27 @@ def main():
     sleep_stage_predictions = np.vectorize(
         SLEEPNET_THRE_CLASS_LABELS.get)(sleepnet_output)
 
-    predictions_df = pd.DataFrame(
-        {
-            'time': times,
-            'sleep_wake': sleep_wake_predictions,
-            'sleep_stage': sleep_stage_predictions,
-            'raw_label': sleepnet_output,
-        }
-    )
+    if args.report_light_and_temp:
+        predictions_df = pd.DataFrame(
+            {
+                'time': times,
+                'sleep_wake': sleep_wake_predictions,
+                'sleep_stage': sleep_stage_predictions,
+                'raw_label': sleepnet_output,
+                'temperature': temp,
+                'light': light,
+            }
+        )
+    else:
+        predictions_df = pd.DataFrame(
+            {
+                'time': times,
+                'sleep_wake': sleep_wake_predictions,
+                'sleep_stage': sleep_stage_predictions,
+                'raw_label': sleepnet_output,
+            }
+        )
+
     final_prediction_path = os.path.join(args.outdir, 'predictions.csv')
     print("predictions_df shape: {}".format(predictions_df.shape))
     print(predictions_df.head())
