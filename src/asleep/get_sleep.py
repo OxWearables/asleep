@@ -149,6 +149,10 @@ def transform_data2model_input(
     return data2model, times, non_wear
 
 def mean_temp_and_light(data):
+    # It stops processing if data does not include temperature and light columns
+    if not {'temperature', 'light'}.issubset(data.columns):
+        sys.exit('There is no temperature and light columns in the raw data.')
+    
     # Calculates mean temperature and light for each 30s window
     print("Calculating mean temperature and light for each 30s interval.")
     
@@ -257,7 +261,7 @@ def main():
     parser.add_argument(
         "--report_light_and_temp",
         action="store_true",
-        help="If true, it will add mean temperature and light columns to the predictions.csv file.")
+        help="If true, it adds mean temp. and light columns to the predictions.csv file.")
     parser.add_argument(
         "--pytorch_device",
         "-d",
