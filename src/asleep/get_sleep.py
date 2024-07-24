@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import json
 import os
+import sys
 import joblib
 import urllib
 import shutil
@@ -148,14 +149,15 @@ def transform_data2model_input(
         non_wear = np.load(non_wear_path)
     return data2model, times, non_wear
 
+
 def mean_temp_and_light(data):
     # It stops processing if data does not include temperature and light columns
     if not {'temperature', 'light'}.issubset(data.columns):
         sys.exit('There is no temperature and light columns in the raw data.')
-    
+
     # Calculates mean temperature and light for each 30s window
     print("Calculating mean temperature and light for each 30s interval.")
-    
+
     data['time'] = pd.to_datetime(data['time'])
     # Grouping by time
     grouped = data.groupby(pd.Grouper(key='time', freq='30S', origin=data['time'].min()))
@@ -165,7 +167,8 @@ def mean_temp_and_light(data):
     temp = mean_values["temperature"].to_numpy()
     light = mean_values["light"].to_numpy()
 
-    return(temp, light)
+    return temp, light
+
 
 def get_sleep_windows(data2model, times, non_wear, args):
     # data2model: N x 3 x 900
