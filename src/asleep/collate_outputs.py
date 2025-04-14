@@ -50,7 +50,9 @@ def collate_jsons(file_list, outfile, overwrite=True):
     df = []
     for file in tqdm(file_list):
         with open(file, 'r') as f:
-            df.append(json.load(f, object_pairs_hook=OrderedDict))
+            j = json.load(f, object_pairs_hook=OrderedDict)
+            j['filepath'] = file
+            df.append(j)
     df = pd.DataFrame.from_dict(df)  # merge to a dataframe
     df = df.applymap(convert_ordereddict)  # convert any OrderedDict cell values to regular dict
     df.to_csv(outfile, index=False)
