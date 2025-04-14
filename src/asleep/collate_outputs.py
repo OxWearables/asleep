@@ -21,21 +21,29 @@ def collate_outputs(
     print("Searching files...")
 
     info_files = []
+    summary_files = []
 
     # Iterate through the files and append to the appropriate list based on the suffix
     for file in Path(results_dir).rglob('*'):
         if file.is_file():
             if file.name.endswith("info.json"):
                 info_files.append(file)
+            if file.name.endswith("summary.json"):
+                summary_files.append(file)
 
     collated_results_dir = Path(collated_results_dir)
     collated_results_dir.mkdir(parents=True, exist_ok=True)
 
-    # Collate Info.json files
-    print(f"Collating {len(info_files)} Info files...")
+    # Collate info.json files
+    print(f"Collating {len(info_files)} info files...")
     outfile = collated_results_dir / "info.csv.gz"
     collate_jsons(info_files, outfile)
     print('Collated info CSV written to', outfile)
+    # Collate summary.json files
+    print(f"Collating {len(summary_files)} summary files...")
+    outfile = collated_results_dir / "summary.csv.gz"
+    collate_jsons(summary_files, outfile)
+    print('Collated summary CSV written to', outfile)
 
     return
 
