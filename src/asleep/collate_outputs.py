@@ -1,5 +1,7 @@
 import argparse
 import json
+import gzip
+import zipfile
 from collections import OrderedDict
 
 import pandas as pd
@@ -35,18 +37,25 @@ def collate_outputs(
     sleep_block_files = []
     day_summary_files = []
 
+    # Define file patterns for each type (including compressed versions)
+    info_patterns = ['info.json', 'info.json.gz', 'info.json.zip']
+    summary_patterns = ['summary.json', 'summary.json.gz', 'summary.json.zip']
+    predictions_patterns = ['predictions.csv', 'predictions.csv.gz', 'predictions.csv.zip']
+    sleep_block_patterns = ['sleep_block.csv', 'sleep_block.csv.gz', 'sleep_block.csv.zip']
+    day_summary_patterns = ['day_summary.csv', 'day_summary.csv.gz', 'day_summary.csv.zip']
+
     # Iterate through the files and append to the appropriate list based on the suffix
     for file in Path(results_dir).rglob('*'):
         if file.is_file():
-            if file.name.endswith("info.json") and 'info' in include_set:
+            if any(file.name == pattern for pattern in info_patterns) and 'info' in include_set:
                 info_files.append(file)
-            elif file.name.endswith("summary.json") and 'summary' in include_set:
+            elif any(file.name == pattern for pattern in summary_patterns) and 'summary' in include_set:
                 summary_files.append(file)
-            elif file.name == "predictions.csv" and 'predictions' in include_set:
+            elif any(file.name == pattern for pattern in predictions_patterns) and 'predictions' in include_set:
                 predictions_files.append(file)
-            elif file.name == "sleep_block.csv" and 'sleep_block' in include_set:
+            elif any(file.name == pattern for pattern in sleep_block_patterns) and 'sleep_block' in include_set:
                 sleep_block_files.append(file)
-            elif file.name == "day_summary.csv" and 'day_summary' in include_set:
+            elif any(file.name == pattern for pattern in day_summary_patterns) and 'day_summary' in include_set:
                 day_summary_files.append(file)
 
     collated_results_dir = Path(collated_results_dir)
@@ -109,13 +118,38 @@ def collate_jsons(file_list, outfile, overwrite=True):
 
     df = []
     for file in tqdm(file_list):
-        with open(file, 'r') as f:
-            j = json.load(f, object_pairs_hook=OrderedDict)
-            j['filepath'] = file
-            df.append(j)
-    df = pd.DataFrame.from_dict(df)  # merge to a dataframe
-    df = df.applymap(convert_ordereddict)  # convert any OrderedDict cell values to regular dict
-    df.to_csv(outfile, index=False)
+        file_path = Path(file)
+        
+        # Handle different compression formats for JSON files
+        if file_path.name.endswith('.gz'):
+            with gzip.open(file, 'rt', encoding='utf-8') as f:
+                j = json.load(f, object_pairs_hook=OrderedDict)
+        elif file_path.name.endswith('.zip'):
+            with zipfile.ZipFile(file, 'r') as zf:
+                # Find the JSON file inside the zip
+                json_file = None
+                for name in zf.namelist():
+                    if name.endswith('.json'):
+                        json_file = name
+                        break
+                if json_file:
+                    with zf.open(json_file) as f:
+                        j = json.load(f, object_pairs_hook=OrderedDict)
+                else:
+                    print(f"Warning: No JSON file found in {file}")
+                    continue
+        else:
+            # Regular uncompressed JSON file
+            with open(file, 'r', encoding='utf-8') as f:
+                j = json.load(f, object_pairs_hook=OrderedDict)
+        
+        j['filepath'] = str(file)
+        df.append(j)
+    
+    if df:  # Only create DataFrame if we have data
+        df = pd.DataFrame.from_dict(df)  # merge to a dataframe
+        df = df.applymap(convert_ordereddict)  # convert any OrderedDict cell values to regular dict
+        df.to_csv(outfile, index=False)
 
     return
 
