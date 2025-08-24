@@ -17,15 +17,16 @@ def collate_outputs(
     """Collate selected results files in <results_dir>.
     :param str results_dir: Root directory in which to search for result files.
     :param str collated_results_dir: Directory to write the collated files to.
-    :param list include_files: List of file types to collate. Options: 'info', 'summary', 'predictions', 'sleep_block', 'day_summary'
+    :param list include_files: List of file types to collate.
+        Options: 'info', 'summary', 'predictions', 'sleep_block', 'day_summary'
     :return: Collated files written to <collated_results_dir>
     :rtype: void
     """
-    
+
     # Default to only JSON files if none specified
     if include_files is None:
         include_files = ['info', 'summary']
-    
+
     # Convert to set for faster lookups
     include_set = set(include_files)
 
@@ -49,13 +50,17 @@ def collate_outputs(
         if file.is_file():
             if any(file.name == pattern for pattern in info_patterns) and 'info' in include_set:
                 info_files.append(file)
-            elif any(file.name == pattern for pattern in summary_patterns) and 'summary' in include_set:
+            elif any(file.name == pattern for pattern in summary_patterns) and \
+                    'summary' in include_set:
                 summary_files.append(file)
-            elif any(file.name == pattern for pattern in predictions_patterns) and 'predictions' in include_set:
+            elif any(file.name == pattern for pattern in predictions_patterns) and \
+                    'predictions' in include_set:
                 predictions_files.append(file)
-            elif any(file.name == pattern for pattern in sleep_block_patterns) and 'sleep_block' in include_set:
+            elif any(file.name == pattern for pattern in sleep_block_patterns) and \
+                    'sleep_block' in include_set:
                 sleep_block_files.append(file)
-            elif any(file.name == pattern for pattern in day_summary_patterns) and 'day_summary' in include_set:
+            elif any(file.name == pattern for pattern in day_summary_patterns) and \
+                    'day_summary' in include_set:
                 day_summary_files.append(file)
 
     collated_results_dir = Path(collated_results_dir)
@@ -67,35 +72,35 @@ def collate_outputs(
         outfile = collated_results_dir / "info.csv.gz"
         collate_jsons(info_files, outfile)
         print('Collated info CSV written to', outfile)
-    
+
     if summary_files:
         print(f"Collating {len(summary_files)} summary files...")
         outfile = collated_results_dir / "summary.csv.gz"
         collate_jsons(summary_files, outfile)
         print('Collated summary CSV written to', outfile)
-    
+
     if predictions_files:
         print(f"Collating {len(predictions_files)} predictions files...")
         outfile = collated_results_dir / "predictions.csv.gz"
-        collate_csvs_with_filepath(predictions_files, outfile)
+        collate_csvs(predictions_files, outfile)
         print('Collated predictions CSV written to', outfile)
-    
+
     if sleep_block_files:
         print(f"Collating {len(sleep_block_files)} sleep_block files...")
         outfile = collated_results_dir / "sleep_block.csv.gz"
-        collate_csvs_with_filepath(sleep_block_files, outfile)
+        collate_csvs(sleep_block_files, outfile)
         print('Collated sleep_block CSV written to', outfile)
-    
+
     if day_summary_files:
         print(f"Collating {len(day_summary_files)} day_summary files...")
         outfile = collated_results_dir / "day_summary.csv.gz"
-        collate_csvs_with_filepath(day_summary_files, outfile)
+        collate_csvs(day_summary_files, outfile)
         print('Collated day_summary CSV written to', outfile)
-    
+
     # Print summary of what was processed
     file_counts = {
         'info': len(info_files),
-        'summary': len(summary_files), 
+        'summary': len(summary_files),
         'predictions': len(predictions_files),
         'sleep_block': len(sleep_block_files),
         'day_summary': len(day_summary_files)
@@ -119,7 +124,7 @@ def collate_jsons(file_list, outfile, overwrite=True):
     df = []
     for file in tqdm(file_list):
         file_path = Path(file)
-        
+
         # Handle different compression formats for JSON files
         if file_path.name.endswith('.gz'):
             with gzip.open(file, 'rt', encoding='utf-8') as f:
@@ -142,35 +147,20 @@ def collate_jsons(file_list, outfile, overwrite=True):
             # Regular uncompressed JSON file
             with open(file, 'r', encoding='utf-8') as f:
                 j = json.load(f, object_pairs_hook=OrderedDict)
-        
+
         j['filepath'] = str(file)
         df.append(j)
-    
+
     if df:  # Only create DataFrame if we have data
         df = pd.DataFrame.from_dict(df)  # merge to a dataframe
-        df = df.applymap(convert_ordereddict)  # convert any OrderedDict cell values to regular dict
+        # convert any OrderedDict cell values to regular dict
+        df = df.applymap(convert_ordereddict)
         df.to_csv(outfile, index=False)
 
     return
 
 
 def collate_csvs(file_list, outfile, overwrite=True):
-    """ Collate a list of CSV files into a single CSV file."""
-
-    if overwrite and outfile.exists():
-        print(f"Overwriting existing file: {outfile}")
-        outfile.unlink()  # remove existing file
-
-    header_written = False
-    for file in tqdm(file_list):
-        df = pd.read_csv(file)
-        df.to_csv(outfile, mode='a', index=False, header=not header_written)
-        header_written = True
-
-    return
-
-
-def collate_csvs_with_filepath(file_list, outfile, overwrite=True):
     """ Collate a list of CSV files into a single CSV file, adding filepath column."""
 
     if overwrite and outfile.exists():
@@ -208,10 +198,10 @@ def main():
 Examples:
   # Collate info and summary files (default)
   collate_sleep results/
-  
+
   # Collate only summary and sleep blocks
   collate_sleep results/ --include summary sleep_block
-  
+
   # Collate all file types
   collate_sleep results/ --include info summary predictions sleep_block day_summary"""
     )
