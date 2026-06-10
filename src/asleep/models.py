@@ -103,7 +103,7 @@ class SleepWindowSSL:
         hmm_params = hmm_params or dict()
         self.hmms = hmm_utils.HMMSmoother(**hmm_params)
 
-    def fit(self, X, Y, groups=None):
+    def fit(self, X, Y, groups=None, num_workers=0):
         sslmodel.verbose = self.verbose
 
         if self.verbose:
@@ -137,14 +137,14 @@ class SleepWindowSSL:
             train_dataset,
             batch_size=self.batch_size,
             shuffle=True,
-            num_workers=1,
+            num_workers=num_workers,
         )
 
         val_loader = DataLoader(
             val_dataset,
             batch_size=self.batch_size,
             shuffle=False,
-            num_workers=1,
+            num_workers=num_workers,
         )
 
         class_weights = get_inverse_class_weights(y_train)
@@ -177,7 +177,7 @@ class SleepWindowSSL:
 
         return self
 
-    def predict(self, X, groups=None):
+    def predict(self, X, groups=None, num_workers=0):
         sslmodel.verbose = self.verbose
 
         dataset = sslmodel.NormalDataset(X, name='prediction')
@@ -185,7 +185,7 @@ class SleepWindowSSL:
             dataset,
             batch_size=self.batch_size,
             shuffle=False,
-            num_workers=1,
+            num_workers=num_workers,
         )
 
         model = sslmodel.get_sslnet(tag=self.repo_tag, pretrained=False)

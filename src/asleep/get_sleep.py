@@ -189,7 +189,11 @@ def get_sleep_windows(data2model, times, non_wear, args):
             model_path, force_download=args.force_download)
         sleep_window_detector.device = args.pytorch_device  # expect channel last
         data_channel_last = np.swapaxes(data2model, 1, -1)
-        window_pred = sleep_window_detector.predict(data_channel_last)
+        num_workers = getattr(args, 'num_workers', 0)
+        if num_workers is None:
+            num_workers = 0
+        window_pred = sleep_window_detector.predict(
+            data_channel_last, num_workers=num_workers)
         sleep_prediction[~non_wear] = window_pred
         print(sleep_prediction.shape)
         print(np.unique(sleep_prediction, return_counts=True))
@@ -313,6 +317,11 @@ def main():
              "Default: 'mps' if available, otherwise 'cpu'",
         type=str,
         default=None)
+    parser.add_argument(
+        "--num_workers",
+        help="Number of worker processes to use for sleep window inference.",
+        type=int,
+        default=0)
     parser.add_argument(
         "--model_weight_path",
         "-w",

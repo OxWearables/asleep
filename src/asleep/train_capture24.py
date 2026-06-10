@@ -69,7 +69,7 @@ def main():
 
     sleep_window_detector = SleepWindowSSL(
         device=my_device, batch_size=2000, verbose=True)
-    sleep_window_detector.fit(X, y, groups=pid)
+    sleep_window_detector.fit(X, y, groups=pid, num_workers=1)
     joblib.dump(sleep_window_detector, 'ssl.joblib.lzma', compress=('lzma', 3))
 
 
