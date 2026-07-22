@@ -267,7 +267,7 @@ def download_models(force_download=False):
         num_classes=5, lstm_nn_size=1024, lstm_layer=2,
         dropout_p=0, bi_lstm=True,
         trust_repo=True)
-    
+
     print("All models downloaded successfully.")
 
 
