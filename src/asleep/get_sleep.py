@@ -237,7 +237,7 @@ def get_sleep_windows(data2model, times, non_wear, args):
         master_npids
 
 
-def download_models(force_download=False, include_sleepnet = True):
+def download_models(force_download=False):
     """Download all required model files without processing any data."""
     import asleep.sslmodel as sslmodel
 
@@ -261,14 +261,13 @@ def download_models(force_download=False, include_sleepnet = True):
     # 3. asleep repo + SleepNet CNN-LSTM weights via torch.hub
     #    torch.hub.set_dir was set in step 2, so repo + weights land in torch_hub_cache/
     #    Parameters must match the pretrained weights (config_eval: cnn_lstm_eval + deployment)
-    if include_sleepnet:
-        print("Caching SleepNet repository and weights...")
-        torch.hub.load(
-            'OxWearables/asleep', 'sleepnet',
-            num_classes=5, lstm_nn_size=1024, lstm_layer=2,
-            dropout_p=0, bi_lstm=True,
-            trust_repo=True)
-
+    print("Caching SleepNet repository and weights...")
+    torch.hub.load(
+        'OxWearables/asleep', 'sleepnet',
+        num_classes=5, lstm_nn_size=1024, lstm_layer=2,
+        dropout_p=0, bi_lstm=True,
+        trust_repo=True)
+    
     print("All models downloaded successfully.")
 
 
