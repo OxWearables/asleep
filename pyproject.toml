@@ -118,7 +118,8 @@ dependencies = [ # Optional
   "transforms3d",
   "stepcount",
   "hydra-core",
-  "matplotlib"
+  "matplotlib",
+  "importlib"
 ]
 
 # List additional groups of dependencies here (e.g. development

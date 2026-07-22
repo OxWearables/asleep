@@ -11,6 +11,7 @@ import shutil
 import datetime
 
 import torch
+from importlib.metadata import version
 
 import asleep.sleep_windows as sw
 from asleep.utils import data_long2wide, read, NpEncoder
@@ -372,10 +373,14 @@ def main():
 
     # 1. Parse raw files into a dataframe
     # Add non-wear detection
-    data, info = get_parsed_data(
+    info = {}
+    info['AsleepVersion'] = version('asleep')
+
+    data, info_read = get_parsed_data(
         raw_data_path, info_data_path, resample_hz, args)
     if args.remove_intermediate_files:
         os.remove(raw_data_path)
+    info.update(info_read)
 
     # 1.1 Transform data into a usable format for inference
     data2model, times, non_wear = transform_data2model_input(
