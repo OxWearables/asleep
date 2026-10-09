@@ -1,8 +1,9 @@
 include tox.ini
+include hubconf.py
 include constraints/*.txt
-include *.md
+include GLOSSARY.md LICENSE.md README.md RELEASING.md
 recursive-include tests *.py
-recursive-include assets *.jpg *.lzma
+recursive-include assets *.graffle *.jpg *.lzma
 recursive-include src *.yaml
 exclude src/asleep/models *.mdl
 recursive-exclude src/asleep/torch_hub_cache *
