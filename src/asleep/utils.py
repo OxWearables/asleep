@@ -1,7 +1,19 @@
 from __future__ import annotations
 
 from os import PathLike
-from typing import Any, Callable, Dict, Generator, List, Optional, Sequence, Tuple, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 import torch
 from torch import Tensor
@@ -46,7 +58,8 @@ def infer_freq(x: Any) -> pd.Timedelta:
 
 
 def read(
-    filepath: Union[str, PathLike[str]], resample_hz: Union[str, int, float] = 'uniform'
+    filepath: Union[str, PathLike[str]],
+    resample_hz: Union[Literal["uniform"], int, float] = "uniform",
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     p = pathlib.Path(filepath)
     ftype = p.suffixes[0].lower()
@@ -88,7 +101,7 @@ def read(
     elif ftype in (".cwa", ".gt3x", ".bin"):
 
         data, info = actipy.read_device(
-            filepath,
+            str(filepath),
             lowpass_hz=15,
             calibrate_gravity=True,
             detect_nonwear=False,
@@ -193,10 +206,7 @@ class NormalDataset(Dataset[Tuple[Tensor, Any, Any]]):
 
         sample = self.X[idx, :]
 
-        if self.y is not None:
-            y = self.y[idx]
-        else:
-            y = np.NaN
+        y: Any = self.y[idx] if self.y is not None else np.nan
 
         if self.pid is not None:
             pid = self.pid[idx]
