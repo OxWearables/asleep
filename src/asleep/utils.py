@@ -60,6 +60,7 @@ def infer_freq(x: Any) -> pd.Timedelta:
 def read(
     filepath: Union[str, PathLike[str]],
     resample_hz: Union[Literal["uniform"], int, float] = "uniform",
+    sample_rate: Optional[int] = None,
 ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     p = pathlib.Path(filepath)
     ftype = p.suffixes[0].lower()
@@ -79,8 +80,9 @@ def read(
         else:
             raise ValueError(f"Unknown file format: {ftype}")
 
-        freq = infer_freq(data.index)
-        sample_rate = int(np.round(pd.Timedelta('1s') / freq))
+        if sample_rate is None:
+            freq = infer_freq(data.index)
+            sample_rate = int(np.round(pd.Timedelta('1s') / freq))
 
         data, info = actipy.process(
             data, sample_rate,

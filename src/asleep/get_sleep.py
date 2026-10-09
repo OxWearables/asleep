@@ -83,7 +83,9 @@ def get_parsed_data(
     # add the time shift to the parsed data frame
     if os.path.exists(raw_data_path) is False or os.path.exists(
             info_data_path) is False or args.force_run is True:
-        data, info = read(args.filepath, resample_hz)
+        data, info = read(
+            args.filepath, resample_hz, sample_rate=getattr(args, 'sample_rate', None)
+        )
         # data will have the following columns:
         # time, x, y, z, non_wear
         data = data.reset_index()
@@ -356,6 +358,11 @@ def main() -> None:
         help="The number hours to shift forward or backward from "
              "the current device time. e.g. +1 or -1",
         default="0")
+    parser.add_argument(
+        "--sample_rate",
+        type=int,
+        help="The sample rate of CSV or pickle input. If omitted, it is inferred.",
+        default=None)
     args = parser.parse_args()
 
     if args.download_models:
