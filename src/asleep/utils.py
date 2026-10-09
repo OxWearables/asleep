@@ -322,10 +322,10 @@ class EarlyStopping:
             msg = msg + f" ({self.val_loss_min:.6f} --> {val_loss:.6f}). "
             msg = msg + "Saving model ..."
             self.trace_func(msg)
-        if hasattr(model, 'module'):
-            torch.save(model.module.state_dict(), self.path)
-        else:
-            torch.save(model.state_dict(), self.path)
+        checkpoint_model = (
+            cast(nn.Module, model.module) if hasattr(model, 'module') else model
+        )
+        torch.save(checkpoint_model.state_dict(), self.path)
         self.val_loss_min = val_loss
 
 
