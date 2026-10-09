@@ -428,11 +428,11 @@ class Downsample(nn.Module):
         self.padding = int(order * (factor - 1) / 2)
 
         box_kernel = np.ones(factor)
-        kernel = np.ones(factor)
+        kernel_array = np.ones(factor)
         for _ in range(order):
-            kernel = np.convolve(kernel, box_kernel)
-        kernel /= np.sum(kernel)
-        kernel = torch.Tensor(kernel)
+            kernel_array = np.convolve(kernel_array, box_kernel)
+        kernel_array /= np.sum(kernel_array)
+        kernel = torch.from_numpy(kernel_array).float()
         self.register_buffer(
             "kernel", kernel[None, None, :].repeat((channels, 1, 1)))
 
@@ -521,9 +521,10 @@ class CNNLSTM(nn.Module):
         feature_size = x.size()[-1]
 
         # 2. lstm
+        max_seq_len = int(seq_lengths.max().item())
         seq_tensor = torch.zeros(
             len(seq_lengths),
-            seq_lengths.max(),
+            max_seq_len,
             feature_size,
             dtype=torch.float,
             device=self.model_device,
@@ -531,7 +532,7 @@ class CNNLSTM(nn.Module):
         start_idx = 0
 
         for i in range(len(seq_lengths)):
-            current_len = seq_lengths[i]
+            current_len = int(seq_lengths[i].item())
             current_series = x[
                 start_idx: start_idx + current_len, :
             ]  # num_time_step x feature_size
@@ -544,7 +545,7 @@ class CNNLSTM(nn.Module):
         seq_lengths_ordered, perm_idx = seq_lengths.sort(0, descending=True)
         seq_tensor = seq_tensor[perm_idx]
         packed_input = pack_padded_sequence(
-            seq_tensor, seq_lengths_ordered.cpu().numpy(), batch_first=True
+            seq_tensor, seq_lengths_ordered.cpu(), batch_first=True
         )
 
         packed_output, (_, _) = self.lstm(packed_input)
@@ -557,8 +558,9 @@ class CNNLSTM(nn.Module):
 
         # reverse back to the original shape
         # total_epoch_num * fc_feature_size
+        total_epochs = int(seq_lengths.sum().item())
         fc_tensor = torch.zeros(
-            seq_lengths.sum(),
+            total_epochs,
             self.fc_feature_size,
             dtype=torch.float,
             device=self.model_device,
@@ -566,7 +568,7 @@ class CNNLSTM(nn.Module):
 
         start_idx = 0
         for i in range(len(seq_lengths)):
-            current_len = seq_lengths[i]
+            current_len = int(seq_lengths[i].item())
             current_series = lstm_output[
                 i, :current_len, :
             ]  # num_time_step x feature_size

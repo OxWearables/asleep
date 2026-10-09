@@ -14,6 +14,7 @@ from tqdm import tqdm
 from torchvision import transforms
 from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
+from torch.optim import Adam
 from asleep.utils import EarlyStopping, RandomSwitchAxis, RotationAxis
 
 
@@ -66,10 +67,7 @@ class NormalDataset(Dataset[Tuple[torch.Tensor, Any, Any]]):
 
         sample = self.X[idx, :]
 
-        if self.y is not None:
-            y = self.y[idx]
-        else:
-            y = np.NaN
+        y: Any = self.y[idx] if self.y is not None else np.nan
 
         if self.pid is not None:
             pid = self.pid[idx]
@@ -207,7 +205,7 @@ def train(
     :param learning_rate: Adam learning rate
     :param patience: early stopping patience
     """
-    optimizer = torch.optim.Adam(
+    optimizer = Adam(
         model.parameters(), lr=learning_rate, amsgrad=True
     )
 
