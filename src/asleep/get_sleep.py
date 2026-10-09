@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from os import PathLike
 from typing import Any, Dict, Tuple, Union
+from importlib.metadata import version
 
 import pathlib
 import argparse
@@ -102,15 +103,17 @@ def get_parsed_data(
 
         pathlib.Path(args.outdir).mkdir(parents=True, exist_ok=True)
         data.to_csv(raw_data_path)
-        with open(info_data_path, 'w', encoding='utf-8') as f:
-            json.dump(info, f, ensure_ascii=False, indent=4, cls=NpEncoder)
         print("Raw data file saved to: {}".format(raw_data_path))
-        print("Info data file saved to: {}".format(info_data_path))
     else:
         print("Raw data file already exists. Skipping raw data parsing.")
         data = pd.read_csv(raw_data_path)
         with open(info_data_path, 'r') as f:
             info = json.load(f)
+
+    info['AsleepVersion'] = version('asleep')
+    with open(info_data_path, 'w', encoding='utf-8') as f:
+        json.dump(info, f, ensure_ascii=False, indent=4, cls=NpEncoder)
+    print("Info data file saved to: {}".format(info_data_path))
     print(data.head())
     return data, info
 
