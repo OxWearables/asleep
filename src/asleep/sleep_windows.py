@@ -1,6 +1,11 @@
+from __future__ import annotations
+
+from typing import Any, List, Sequence, Tuple
+
 import pandas as pd
 from datetime import timedelta
 import numpy as np
+from numpy.typing import NDArray
 import itertools
 
 
@@ -10,8 +15,12 @@ LEN_POS = 1
 IDX_POS = 2
 
 
-def find_sleep_blocks(interval_counter):
-    sleep_block_idxes = []
+Array = NDArray[Any]
+TimeWindow = List[Any]
+
+
+def find_sleep_blocks(interval_counter: Array) -> List[int]:
+    sleep_block_idxes: List[int] = []
     i = 0
 
     while i < len(interval_counter):
@@ -25,16 +34,16 @@ def find_sleep_blocks(interval_counter):
     return sleep_block_idxes
 
 
-def find_block_duration(sleep_df):
+def find_block_duration(sleep_df: pd.DataFrame) -> Array:
     # Find sleep duration for each block
     # Return: Counter: n x 3: each row has block class, block length and the
     # block starting idx
-    block_lengths = [
+    block_length_pairs = [
         (x[0], len(list(x[1]))) for x in itertools.groupby(sleep_df["label"])
     ]   # contains (class, block_len)
-    block_lengths = np.array(block_lengths)
+    block_lengths = np.array(block_length_pairs)
 
-    counter = []  # [label, block_len, start_idx]
+    counter: List[List[Any]] = []  # [label, block_len, start_idx]
     i = 0
     freq_idx = 1
     for my_ele in block_lengths:
@@ -42,11 +51,10 @@ def find_block_duration(sleep_df):
         my_ele.append(i)
         i += my_ele[freq_idx]
         counter.append(my_ele)
-    counter = np.array(counter)
-    return counter
+    return np.array(counter)
 
 
-def fill_sleep_block_gaps(sleep_block_idxes, counter):
+def fill_sleep_block_gaps(sleep_block_idxes: Sequence[int], counter: Array) -> Array:
     # fill all the eligible sleep blocks gaps with sleep class
     gap2fill = count_sleep_block_gap(sleep_block_idxes, counter)
 
@@ -62,10 +70,12 @@ def fill_sleep_block_gaps(sleep_block_idxes, counter):
     return counter
 
 
-def count_sleep_block_gap(sleep_block_idxes, counter, epoch_length=30):
+def count_sleep_block_gap(
+    sleep_block_idxes: Sequence[int], counter: Array, epoch_length: int = 30
+) -> List[int]:
     # epoch_length sec
     # find the gap between sleep blocks that are less than 30 mins apart
-    gap2fill = []
+    gap2fill: List[int] = []
     if len(sleep_block_idxes) > 1:
         first_block = counter[sleep_block_idxes[0]]
         end_of_block_idx = first_block[IDX_POS] + first_block[LEN_POS]
@@ -81,13 +91,13 @@ def count_sleep_block_gap(sleep_block_idxes, counter, epoch_length=30):
     return gap2fill
 
 
-def find_sleep_windows(sleep_blocks):
+def find_sleep_windows(sleep_blocks: Array) -> Tuple[List[List[int]], int, int]:
     current_start_master_idx = -1
     current_end_master_idx = -1
     pre_class = -1
     res_start_master_idx = -1
     res_end_master_idx = -1
-    all_sleep_blocks = []
+    all_sleep_blocks: List[List[int]] = []
 
     for win in sleep_blocks:
         if win[CLASS_POS] == IS_SLEEP_FLAG:
@@ -117,7 +127,7 @@ def find_sleep_windows(sleep_blocks):
     return all_sleep_blocks, res_start_master_idx, res_end_master_idx
 
 
-def get_sleep_blocks(interval_df):
+def get_sleep_blocks(interval_df: pd.DataFrame) -> Tuple[List[TimeWindow], TimeWindow]:
     # merge sleep blocks that are less than 1 hour apart
     counter = find_block_duration(interval_df)  # [label, block_len, start_idx]
     sleep_block_idxes = find_sleep_blocks(counter)
@@ -127,7 +137,7 @@ def get_sleep_blocks(interval_df):
     all_sleep_idxes, long_start_idx, long_end_idx = find_sleep_windows(
         sleep_win_counter)
 
-    sleep_wins = []
+    sleep_wins: List[TimeWindow] = []
     for idx_pair in all_sleep_idxes:
         start_idx = idx_pair[0]
         end_idx = idx_pair[1]
@@ -140,12 +150,14 @@ def get_sleep_blocks(interval_df):
     return sleep_wins, long_sleep_win
 
 
-def find_valid_sleep_blocks(counter, epoch_length, min_duration_min=30):
+def find_valid_sleep_blocks(
+    counter: Array, epoch_length: int, min_duration_min: int = 30
+) -> List[int]:
     SLEEP_LABEL = 1
     sleep_block_min_len = min_duration_min * 60  # .5 hour
     epoch_min_len = sleep_block_min_len / epoch_length
 
-    valid_sleep_block_idxes = []
+    valid_sleep_block_idxes: List[int] = []
     for i in range(len(counter)):
         e = counter[i]
         len_idx = 1
@@ -155,16 +167,16 @@ def find_valid_sleep_blocks(counter, epoch_length, min_duration_min=30):
     return valid_sleep_block_idxes
 
 
-def find_sleep_block_duration(sleep_df):
+def find_sleep_block_duration(sleep_df: pd.DataFrame) -> Array:
     # Find sleep duration for each block
     # Return: Counter: n x 3: each row has block class, block length and the
     # block starting idx
-    block_lengths = [
+    block_length_pairs = [
         (x[0], len(list(x[1]))) for x in itertools.groupby(sleep_df["label"])
     ]
-    block_lengths = np.array(block_lengths)
+    block_lengths = np.array(block_length_pairs)
 
-    counter = []  # [label, block_len, start_idx]
+    counter: List[List[Any]] = []  # [label, block_len, start_idx]
     i = 0
     freq_idx = 1
     for my_ele in block_lengths:
@@ -172,18 +184,19 @@ def find_sleep_block_duration(sleep_df):
         my_ele.append(i)
         i += my_ele[freq_idx]
         counter.append(my_ele)
-    counter = np.array(counter)
-    return counter
+    return np.array(counter)
 
 
-def find_gaps2fill(valid_sleep_block_idxes, epoch_length, counter):
+def find_gaps2fill(
+    valid_sleep_block_idxes: Sequence[int], epoch_length: int, counter: Array
+) -> List[List[int]]:
     """
     Identify gap idx that need filling.
     Take the eligible sleep block idx, output the idx for the gap that could be filled.
     The idx will be a pair of starting sleep block and ending sleep block.
     """
     max_non_wear_len = 60 * 60 / epoch_length  # one hour
-    gap2fill = []
+    gap2fill: List[List[int]] = []
     for i in range(len(valid_sleep_block_idxes) - 1):
 
         current_block_idx = valid_sleep_block_idxes[i]
@@ -200,7 +213,9 @@ def find_gaps2fill(valid_sleep_block_idxes, epoch_length, counter):
     return gap2fill
 
 
-def fill_gaps(my_df, counter, gap2fill):
+def fill_gaps(
+    my_df: pd.DataFrame, counter: Array, gap2fill: Sequence[Sequence[int]]
+) -> pd.DataFrame:
     class_label = 1
     for gap in gap2fill:
         start_block_idx = gap[0]
@@ -214,7 +229,9 @@ def fill_gaps(my_df, counter, gap2fill):
     return my_df
 
 
-def get_sleep_blocks_per_day(my_df, my_intervals):
+def get_sleep_blocks_per_day(
+    my_df: pd.DataFrame, my_intervals: Sequence[TimeWindow]
+) -> Tuple[List[TimeWindow], List[TimeWindow], List[Any], List[Any], List[float]]:
     """
     my_df: time-series df produced by bbaa
     epoch_len: sec
@@ -224,11 +241,11 @@ def get_sleep_blocks_per_day(my_df, my_intervals):
     end_date = my_df['time'][len(my_df)-1]
 
     """
-    all_sleep_wins = []
-    sleep_wins_long = []
-    interval_starts = []
-    interval_ends = []
-    wear_times = []
+    all_sleep_wins: List[TimeWindow] = []
+    sleep_wins_long: List[TimeWindow] = []
+    interval_starts: List[Any] = []
+    interval_ends: List[Any] = []
+    wear_times: List[float] = []
 
     for interval in my_intervals:
         my_start_time = interval[0]
@@ -250,8 +267,8 @@ def get_sleep_blocks_per_day(my_df, my_intervals):
 
 
 def time_series2sleep_blocks(
-    my_df, date_format="%Y-%m-%d %H:%M:%S.%f"
-):
+    my_df: pd.DataFrame, date_format: str = "%Y-%m-%d %H:%M:%S.%f"
+) -> Tuple[List[TimeWindow], List[TimeWindow], List[Any], List[Any], List[float]]:
     start_date = my_df["time"][0]
     end_date = my_df["time"][len(my_df) - 1]
 
@@ -264,10 +281,10 @@ def time_series2sleep_blocks(
     return all_sleep_wins, sleep_wins_long, interval_start, interval_end, wear_time
 
 
-def get_day_intervals(start_date, end_date, date_format):
+def get_day_intervals(start_date: Any, end_date: Any, date_format: str) -> List[TimeWindow]:
     # 1. Get day intervals
 
-    day_intervals = []
+    day_intervals: List[TimeWindow] = []
     day_end_str = "1990-01-01 09:47:50.439000"
     my_day_end = pd.to_datetime(day_end_str, format=date_format)
     my_day_start = start_date.replace(

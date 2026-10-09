@@ -1,10 +1,21 @@
+from __future__ import annotations
+
+from os import PathLike
+from typing import Any, Dict, Sequence, Union, cast
+
 from asleep.sleep_stats import get_all_sleep_paras, get_stage_durations
 import numpy as np
+from numpy.typing import NDArray
 import pandas as pd
 import json
 
+Array = NDArray[Any]
+Summary = Dict[str, Any]
 
-def summarize_df(my_df, prefix, compute_median=False):
+
+def summarize_df(
+    my_df: pd.DataFrame, prefix: str, compute_median: bool = False
+) -> Summary:
     """
         Convert a dataframe to a json object with a pre-defined prefix
     """
@@ -17,10 +28,14 @@ def summarize_df(my_df, prefix, compute_median=False):
         my_df = my_df.mean(axis=0, numeric_only=True)
         computed_stats = my_df.add_prefix(prefix + "_mean_")
     summary_dict = computed_stats.to_dict()
-    return summary_dict
+    return cast(Summary, summary_dict)
 
 
-def summarize_daily_sleep(day_summary_df, output_json_path, min_wear_time_h):
+def summarize_daily_sleep(
+    day_summary_df: pd.DataFrame,
+    output_json_path: Union[str, PathLike[str]],
+    min_wear_time_h: float,
+) -> None:
     # 1. overall
     day_summary_df = day_summary_df[day_summary_df["wear_duration_H"] >=
                                     min_wear_time_h]
@@ -77,11 +92,12 @@ def summarize_daily_sleep(day_summary_df, output_json_path, min_wear_time_h):
 
 
 def generate_sleep_parameters(
-        all_sleep_wins_df,
-        times,
-        predictions_df,
-        day_summary_path):
-    my_days = []
+        all_sleep_wins_df: pd.DataFrame,
+        times: Array,
+        predictions_df: pd.DataFrame,
+        day_summary_path: Union[str, PathLike[str]],
+) -> pd.DataFrame:
+    my_days: list[Day] = []
     longest_sleep_block = all_sleep_wins_df[all_sleep_wins_df['is_longest_block']]
 
     for index, row in longest_sleep_block.iterrows():
@@ -107,7 +123,7 @@ def generate_sleep_parameters(
     return day_summary_df
 
 
-def is_weekend(current_time):
+def is_weekend(current_time: Any) -> bool:
     """
     Return True if the times are from a weekend, False otherwise.
     """
@@ -117,7 +133,9 @@ def is_weekend(current_time):
         return False
 
 
-def get_day_stats(y_pred, wear_duration, is_my_weekend, interval_start):
+def get_day_stats(
+    y_pred: Array, wear_duration: float, is_my_weekend: bool, interval_start: Any
+) -> Summary:
     (
         sol,
         tst,
@@ -153,7 +171,9 @@ def get_day_stats(y_pred, wear_duration, is_my_weekend, interval_start):
     })
 
 
-def get_day_hourly_stats(times, y_pred, summary):
+def get_day_hourly_stats(
+    times: Sequence[Any], y_pred: Array, summary: Summary
+) -> Summary:
     times_min = np.array([x.hour * 60 + x.minute for x in times])
     # convert all times to hourly
     num_hour_in_day = 24
@@ -170,7 +190,13 @@ def get_day_hourly_stats(times, y_pred, summary):
 
 
 class Day:
-    def __init__(self, y_pred, times, interval_start, wear_duration=0):
+    def __init__(
+        self,
+        y_pred: Array,
+        times: Sequence[Any],
+        interval_start: Any,
+        wear_duration: float = 0,
+    ) -> None:
         # TODO: add support for TST by using all the sleep blocks
         self.interval_start = interval_start
 
@@ -190,19 +216,19 @@ class Day:
             interval_start)
         self.summary = get_day_hourly_stats(times, y_pred, self.summary)
 
-    def get_day(self):
-        return self.day
+    def get_day(self) -> str:
+        return cast(str, self.day)
 
-    def get_y_pred(self):
+    def get_y_pred(self) -> Array:
         return self.y_pred
 
-    def get_times(self):
+    def get_times(self) -> Sequence[Any]:
         return self.times
 
-    def get_summary(self):
+    def get_summary(self) -> Summary:
         return self.summary
 
-    def day2json(self):
+    def day2json(self) -> Dict[str, Any]:
         # should include day id when printing to json
         return {
             "day": self.day,

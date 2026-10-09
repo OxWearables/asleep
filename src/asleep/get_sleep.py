@@ -1,6 +1,12 @@
+from __future__ import annotations
+
+from os import PathLike
+from typing import Any, Dict, Tuple, Union
+
 import pathlib
 import argparse
 import numpy as np
+from numpy.typing import NDArray
 import pandas as pd
 import json
 import os
@@ -40,9 +46,12 @@ NON_WEAR_PREDICTION_FLAG = -1
 
 START_TIME_IDX = 0
 END_TIME_IDX = -1
+Array = NDArray[Any]
 
 
-def load_model(model_path, force_download=False):
+def load_model(
+    model_path: Union[str, PathLike[str]], force_download: bool = False
+) -> Any:
     """ Load trained model. Download if not exists. """
 
     pth = pathlib.Path(model_path)
@@ -58,7 +67,12 @@ def load_model(model_path, force_download=False):
     return joblib.load(pth)
 
 
-def get_parsed_data(raw_data_path, info_data_path, resample_hz, args):
+def get_parsed_data(
+    raw_data_path: Union[str, PathLike[str]],
+    info_data_path: Union[str, PathLike[str]],
+    resample_hz: Union[int, float],
+    args: argparse.Namespace,
+) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     time_shift = 0
     if args.time_shift != '0':
         if args.time_shift[0] == '-':
@@ -100,11 +114,12 @@ def get_parsed_data(raw_data_path, info_data_path, resample_hz, args):
 
 
 def transform_data2model_input(
-        data2model_path,
-        times_path,
-        non_wear_path,
-        data,
-        args):
+        data2model_path: Union[str, PathLike[str]],
+        times_path: Union[str, PathLike[str]],
+        non_wear_path: Union[str, PathLike[str]],
+        data: pd.DataFrame,
+        args: argparse.Namespace,
+) -> Tuple[Array, Array, Array]:
     """
     Current:
                                    x         y         z          non_wear
@@ -152,7 +167,7 @@ def transform_data2model_input(
     return data2model, times, non_wear
 
 
-def mean_temp_and_light(data):
+def mean_temp_and_light(data: pd.DataFrame) -> Tuple[Array, Array]:
     # It stops processing if data does not include temperature and light columns
     if not {'temperature', 'light'}.issubset(data.columns):
         sys.exit('There is no temperature and light columns in the raw data.')
@@ -172,7 +187,9 @@ def mean_temp_and_light(data):
     return temp, light
 
 
-def get_sleep_windows(data2model, times, non_wear, args):
+def get_sleep_windows(
+    data2model: Array, times: Array, non_wear: Array, args: argparse.Namespace
+) -> Tuple[Array, pd.DataFrame, pd.DataFrame, Array, Array]:
     # data2model: N x 3 x 900
     # non_wear_flag: N x 1
     # TODO: only inference on the periods when non-wear is false
@@ -237,7 +254,7 @@ def get_sleep_windows(data2model, times, non_wear, args):
         master_npids
 
 
-def download_models(force_download=False):
+def download_models(force_download: bool = False) -> None:
     """Download all required model files without processing any data."""
     import asleep.sslmodel as sslmodel
 
@@ -271,7 +288,7 @@ def download_models(force_download=False):
     print("All models downloaded successfully.")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="A tool to estimate sleep stages from accelerometer data",
         add_help=True
@@ -483,10 +500,12 @@ def main():
     summarize_daily_sleep(day_summary_df, output_json_path, args.min_wear)
 
 
-def get_master_df(block_time_df, times, acc_array):
+def get_master_df(
+    block_time_df: pd.DataFrame, times: Array, acc_array: Array
+) -> Tuple[Array, Array]:
     # extract interval based on times
-    master_acc = []
-    master_npids = []  # night ids
+    master_acc = np.empty((0, *acc_array.shape[1:]), dtype=acc_array.dtype)
+    master_npids = np.empty(0)  # night ids
 
     for index, row in block_time_df.iterrows():
         start_t = row["start"]
@@ -497,12 +516,8 @@ def get_master_df(block_time_df, times, acc_array):
 
         day_pid = np.ones(np.sum(time_filter)) * index
 
-        if len(master_npids) == 0:
-            master_acc = current_day_acc
-            master_npids = day_pid
-        else:
-            master_acc = np.concatenate((master_acc, current_day_acc))
-            master_npids = np.concatenate((master_npids, day_pid))
+        master_acc = np.concatenate((master_acc, current_day_acc))
+        master_npids = np.concatenate((master_npids, day_pid))
 
     return master_acc, master_npids
 

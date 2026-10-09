@@ -1,11 +1,23 @@
+from __future__ import annotations
+
+from typing import Union
+
 from asleep.models import CNNLSTM, weight_init
 import torch
 
 dependencies = ["torch"]
 
 
-def sleepnet(pretrained=True, my_device="cpu", num_classes=2, lstm_nn_size=128,
-             dropout_p=0.5, bi_lstm=True, lstm_layer=1, local_weight_path=""):
+def sleepnet(
+    pretrained: bool = True,
+    my_device: Union[str, torch.device] = "cpu",
+    num_classes: int = 2,
+    lstm_nn_size: int = 128,
+    dropout_p: float = 0.5,
+    bi_lstm: bool = True,
+    lstm_layer: int = 1,
+    local_weight_path: str = "",
+) -> CNNLSTM:
     model = CNNLSTM(
         num_classes=num_classes,
         model_device=my_device,
@@ -31,5 +43,5 @@ def sleepnet(pretrained=True, my_device="cpu", num_classes=2, lstm_nn_size=128,
                     checkpoint,
                     progress=True,
                     map_location=torch.device(my_device)))
-    model.to(my_device, dtype=torch.float)
+    model.to(torch.device(my_device), dtype=torch.float)
     return model

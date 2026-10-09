@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from os import PathLike
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
+
 from stepcount import hmm_utils
 from sklearn.model_selection import GroupShuffleSplit
 import torch
@@ -6,6 +11,7 @@ from torch.utils.data import DataLoader
 import torch.nn.init as init
 import torch.nn as nn
 import numpy as np
+from numpy.typing import NDArray
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from torch.autograd import Variable
@@ -13,8 +19,11 @@ from torch.autograd import Variable
 import asleep.sslmodel as sslmodel
 from asleep.utils import get_inverse_class_weights
 
+Array = NDArray[Any]
+Device = Union[str, torch.device]
 
-def weight_init(m):
+
+def weight_init(m: nn.Module) -> None:
     '''
     Usage:
         model = Model()
@@ -85,25 +94,27 @@ def weight_init(m):
 class SleepWindowSSL:
     def __init__(
             self,
-            device='cpu',
-            batch_size=100,
-            weights_path='state_dict.pt',
-            repo_tag='v1.0.0',
-            hmm_params=None,
-            verbose=False,
-    ):
+            device: Device = 'cpu',
+            batch_size: int = 100,
+            weights_path: Union[str, PathLike[str]] = 'state_dict.pt',
+            repo_tag: str = 'v1.0.0',
+            hmm_params: Optional[Dict[str, Any]] = None,
+            verbose: bool = False,
+    ) -> None:
         self.device = device
         self.weights_path = weights_path
         self.repo_tag = repo_tag
         self.batch_size = batch_size
-        self.state_dict = None
+        self.state_dict: Any = None
 
         self.verbose = verbose
 
         hmm_params = hmm_params or dict()
         self.hmms = hmm_utils.HMMSmoother(**hmm_params)
 
-    def fit(self, X, Y, groups=None):
+    def fit(
+        self, X: Array, Y: Array, groups: Optional[Array] = None
+    ) -> SleepWindowSSL:
         sslmodel.verbose = self.verbose
 
         if self.verbose:
@@ -114,6 +125,9 @@ class SleepWindowSSL:
             1, test_size=0.2, random_state=41
         ).split(X, Y, groups=groups)
         train_idx, val_idx = next(folds)
+
+        if groups is None:
+            raise ValueError("groups must be provided when fitting SleepWindowSSL")
 
         x_train = X[train_idx]
         x_val = X[val_idx]
@@ -177,7 +191,7 @@ class SleepWindowSSL:
 
         return self
 
-    def predict(self, X, groups=None):
+    def predict(self, X: Array, groups: Optional[Array] = None) -> Array:
         sslmodel.verbose = self.verbose
 
         dataset = sslmodel.NormalDataset(X, name='prediction')
@@ -213,7 +227,7 @@ class Resnet(nn.Module):
 
     """
 
-    def __init__(self, n_channels=3):
+    def __init__(self, n_channels: int = 3) -> None:
         super(Resnet, self).__init__()
 
         # Architecture definition. Each tuple defines
@@ -264,14 +278,14 @@ class Resnet(nn.Module):
 
     @staticmethod
     def make_layer(
-        in_channels,
-        out_channels,
-        conv_kernel_size,
-        n_resblocks,
-        resblock_kernel_size,
-        downfactor,
-        downorder=1,
-    ):
+        in_channels: int,
+        out_channels: int,
+        conv_kernel_size: int,
+        n_resblocks: int,
+        resblock_kernel_size: int,
+        downfactor: int,
+        downorder: int = 1,
+    ) -> nn.Sequential:
         r""" Basic layer in Resnets:
 
         x->[Conv-[ResBlock]^m-BN-ReLU-Down]->
@@ -294,7 +308,7 @@ class Resnet(nn.Module):
         conv_padding = int((conv_kernel_size - 1) / 2)
         resblock_padding = int((resblock_kernel_size - 1) / 2)
 
-        modules = [
+        modules: List[nn.Module] = [
             nn.Conv1d(
                 in_channels,
                 out_channels,
@@ -323,10 +337,10 @@ class Resnet(nn.Module):
 
         return nn.Sequential(*modules)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         feats = self.feature_extractor(x)
 
-        return feats
+        return cast(torch.Tensor, feats)
 
 
 class ResBlock(nn.Module):
@@ -338,8 +352,14 @@ class ResBlock(nn.Module):
 
     """
 
-    def __init__(self, in_channels, out_channels,
-                 kernel_size=5, stride=1, padding=2):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int = 5,
+        stride: int = 1,
+        padding: int = 2,
+    ) -> None:
         super(ResBlock, self).__init__()
 
         self.bn1 = nn.BatchNorm1d(in_channels)
@@ -365,7 +385,7 @@ class ResBlock(nn.Module):
         )
         self.relu = nn.ReLU(inplace=True)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         identity = x
         x = self.relu(self.bn1(x))
         x = self.conv1(x)
@@ -385,8 +405,12 @@ class Downsample(nn.Module):
     See https://richzhang.github.io/antialiased-cnns/ for more details.
     """
 
-    def __init__(self, channels=None, factor=2, order=1):
+    def __init__(
+        self, channels: Optional[int] = None, factor: int = 2, order: int = 1
+    ) -> None:
         super(Downsample, self).__init__()
+        if channels is None:
+            raise ValueError("channels must be provided")
         assert factor > 1, "Downsampling factor must be > 1"
         self.stride = factor
         self.channels = channels
@@ -412,10 +436,10 @@ class Downsample(nn.Module):
         self.register_buffer(
             "kernel", kernel[None, None, :].repeat((channels, 1, 1)))
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return F.conv1d(
             x,
-            self.kernel,
+            cast(torch.Tensor, self.kernel),
             stride=self.stride,
             padding=self.padding,
             groups=x.shape[1])
@@ -424,16 +448,16 @@ class Downsample(nn.Module):
 class CNNLSTM(nn.Module):
     def __init__(
         self,
-        num_classes=2,
-        lstm_layer=3,
-        lstm_nn_size=1024,
-        model_device="cpu",
-        dropout_p=0,
-        lstm_input_size=1024,
-        bidrectional=False,
-        batch_size=10,
-        layer_norm=False,
-    ):
+        num_classes: int = 2,
+        lstm_layer: int = 3,
+        lstm_nn_size: int = 1024,
+        model_device: Device = "cpu",
+        dropout_p: float = 0,
+        lstm_input_size: int = 1024,
+        bidrectional: bool = False,
+        batch_size: int = 10,
+        layer_norm: bool = False,
+    ) -> None:
         super(CNNLSTM, self).__init__()
         if bidrectional:
             fc_feature_size = lstm_nn_size * 2
@@ -464,7 +488,7 @@ class CNNLSTM(nn.Module):
             nn.Linear(fc_feature_size, num_classes),
         )
 
-    def init_hidden(self, batch_size):
+    def init_hidden(self, batch_size: int) -> Tuple[torch.Tensor, torch.Tensor]:
         # the weights are of the form (nb_layers, batch_size, nb_lstm_units)
         init_lstm_layer = self.lstm_layer
         if self.bidrectional:
@@ -484,7 +508,7 @@ class CNNLSTM(nn.Module):
         hidden_b = Variable(hidden_b)
         return hidden_a, hidden_b
 
-    def forward(self, x, seq_lengths):
+    def forward(self, x: torch.Tensor, seq_lengths: torch.Tensor) -> torch.Tensor:
         # x dim: batch_size x C x F_1
         # we will need to do the packing of the sequence dynamically
         # for each batch of input

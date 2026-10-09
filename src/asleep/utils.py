@@ -1,6 +1,14 @@
+from __future__ import annotations
+
+from os import PathLike
+from typing import Any, Callable, Dict, Generator, List, Optional, Sequence, Tuple, Union, cast
+
 import torch
+from torch import Tensor
+from torch import nn
 import random
 import numpy as np
+from numpy.typing import NDArray
 import scipy.stats as stats
 import actipy
 import pandas as pd
@@ -15,8 +23,12 @@ import json
 import warnings
 
 
+Array = NDArray[Any]
+Device = Union[str, torch.device]
+
+
 class NpEncoder(json.JSONEncoder):
-    def default(self, obj):
+    def default(self, obj: Any) -> Any:
         if isinstance(obj, np.integer):
             return int(obj)
         if isinstance(obj, np.floating):
@@ -26,14 +38,16 @@ class NpEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def infer_freq(x):
+def infer_freq(x: Any) -> pd.Timedelta:
     """ Like pd.infer_freq but more forgiving """
     freq, _ = stats.mode(np.diff(x), keepdims=False)
     freq = pd.Timedelta(freq)
     return freq
 
 
-def read(filepath, resample_hz='uniform'):
+def read(
+    filepath: Union[str, PathLike[str]], resample_hz: Union[str, int, float] = 'uniform'
+) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     p = pathlib.Path(filepath)
     ftype = p.suffixes[0].lower()
     fsize = round(p.stat().st_size / (1024 * 1024), 1)
@@ -97,7 +111,7 @@ class RandomSwitchAxis:
     Input size: 3 * FEATURE_SIZE
     """
 
-    def __call__(self, sample):
+    def __call__(self, sample: Tensor) -> Tensor:
         # print(sample.shape)
         # 3 * FEATURE
         x = sample[0, :]
@@ -127,32 +141,33 @@ class RotationAxis:
     Rotation along an axis
     """
 
-    def __call__(self, sample):
+    def __call__(self, sample: Any) -> Array:
         # 3 * FEATURE_SIZE
         sample = np.swapaxes(sample, 0, 1)
         angle = np.random.uniform(low=-np.pi, high=np.pi)
         axis = np.random.uniform(low=-1, high=1, size=sample.shape[1])
         sample = np.matmul(sample, axangle2mat(axis, angle))
         sample = np.swapaxes(sample, 0, 1)
-        return sample
+        return cast(Array, sample)
 
 
-class NormalDataset(Dataset):
+class NormalDataset(Dataset[Tuple[Tensor, Any, Any]]):
     """Implements a map-style torch dataset."""
 
     def __init__(self,
-                 X,
-                 y=None,
-                 pid=None,
-                 name="",
-                 transform=False,
-                 transpose_channels_first=True):
+                 X: Array,
+                 y: Optional[Array] = None,
+                 pid: Optional[Array] = None,
+                 name: str = "",
+                 transform: bool = False,
+                 transpose_channels_first: bool = True) -> None:
 
         if transpose_channels_first:
             # PyTorch expects channels first data format
             X = np.transpose(X, (0, 2, 1))
 
         self.X = torch.from_numpy(X)  # convert data to Tensor
+        self.y: Optional[Tensor]
 
         if y is not None:
             self.y = torch.tensor(y)  # label should be a Tensor too
@@ -169,10 +184,10 @@ class NormalDataset(Dataset):
 
         print(name + " set sample count : " + str(len(self.X)))
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.X)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: Any) -> Tuple[Tensor, Any, Any]:
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
@@ -194,7 +209,7 @@ class NormalDataset(Dataset):
         return sample, y, pid
 
 
-def resize(x, length, axis=1):
+def resize(x: Array, length: int, axis: int = 1) -> Array:
     """Resize the temporal length using linear interpolation.
     X must be of shape (N,M,C) (channels last) or (N,C,M) (channels first),
     where N is the batch size, M is the temporal length, and C is the number
@@ -212,7 +227,7 @@ def resize(x, length, axis=1):
     return x
 
 
-def get_inverse_class_weights(y):
+def get_inverse_class_weights(y: Sequence[int]) -> List[float]:
     """ Return a list with inverse class frequencies in y """
     import collections
 
@@ -222,7 +237,7 @@ def get_inverse_class_weights(y):
             counter[i] = 1
 
     num_samples = len(y)
-    weights = [0] * len(counter)
+    weights = [0.0] * len(counter)
     for idx in counter.keys():
         weights[idx] = 1.0 / (counter[idx] / num_samples)
     print("Inverse class weights: ")
@@ -237,12 +252,12 @@ class EarlyStopping:
 
     def __init__(
             self,
-            patience=5,
-            verbose=False,
-            delta=0,
-            path="checkpoint.pt",
-            trace_func=print,
-    ):
+            patience: int = 5,
+            verbose: bool = False,
+            delta: float = 0,
+            path: Union[str, PathLike[str]] = "checkpoint.pt",
+            trace_func: Callable[[str], Any] = print,
+    ) -> None:
         """
         Args:
             patience (int): How long to wait after last time v
@@ -262,7 +277,7 @@ class EarlyStopping:
         self.patience = patience
         self.verbose = verbose
         self.counter = 0
-        self.best_score = None
+        self.best_score: Optional[float] = None
         self.early_stop = False
         self.val_loss_min = np.Inf
         self.delta = delta
@@ -270,7 +285,7 @@ class EarlyStopping:
 
         self.path = path
 
-    def __call__(self, val_loss, model):
+    def __call__(self, val_loss: float, model: nn.Module) -> None:
 
         score = -val_loss
 
@@ -290,7 +305,7 @@ class EarlyStopping:
             self.save_checkpoint(val_loss, model)
             self.counter = 0
 
-    def save_checkpoint(self, val_loss, model):
+    def save_checkpoint(self, val_loss: float, model: nn.Module) -> None:
         """Saves model when validation loss decrease."""
         if self.verbose:
             msg = "Validation loss decreased"
@@ -304,7 +319,7 @@ class EarlyStopping:
         self.val_loss_min = val_loss
 
 
-def data_long2wide(X, times, non_wear):
+def data_long2wide(X: Array, times: Array, non_wear: Array) -> Tuple[Array, Array, Array]:
     """Convert long-format acc data to wide-format data.
 
     Parameters
@@ -343,8 +358,14 @@ def data_long2wide(X, times, non_wear):
     return X, times, non_wear
 
 
-class cnnLSTMInFerDataset:
-    def __init__(self, X, pid=[], transform=None, target_transform=None):
+class cnnLSTMInFerDataset(Dataset[Tuple[Tensor, Array]]):
+    def __init__(
+        self,
+        X: Array,
+        pid: Optional[Array] = None,
+        transform: Optional[Callable[[Tensor], Tensor]] = None,
+        target_transform: Optional[Callable[[Any], Any]] = None,
+    ) -> None:
         """
         X needs to be in N * Width
         Pid is a numpy array of size N
@@ -356,17 +377,17 @@ class cnnLSTMInFerDataset:
         """
 
         self.X = torch.from_numpy(X)
-        self.pid = pid
-        self.unique_pid_list = np.unique(pid)
+        self.pid = np.empty(0) if pid is None else pid
+        self.unique_pid_list = np.unique(self.pid)
         self.transform = transform
         self.targetTransform = target_transform
         print(len(self.unique_pid_list))
         print("Total sample count : " + str(len(self.X)))
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.unique_pid_list)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: Any) -> Tuple[Tensor, Array]:
         if torch.is_tensor(idx):
             idx = idx.tolist()
         pid_of_choice = self.unique_pid_list[idx]
@@ -380,17 +401,19 @@ class cnnLSTMInFerDataset:
         return sample, self.pid[sample_filter]
 
 
-def cnn_lstm_infer_collate(batch):
-    data = [item[0] for item in batch]
-    data = torch.cat(data)
+def cnn_lstm_infer_collate(batch: Sequence[Tuple[Tensor, Array]]) -> List[Tensor]:
+    data_items = [item[0] for item in batch]
+    data = torch.cat(data_items)
 
-    pid = [item[1] for item in batch]
-    pid = np.concatenate(pid)
-    pid = torch.Tensor(pid)
+    pid_items = [item[1] for item in batch]
+    pid_array = np.concatenate(pid_items)
+    pid = torch.Tensor(pid_array)
     return [data, pid]
 
 
-def prepare_infer_data_cnnlstm(val, my_device):
+def prepare_infer_data_cnnlstm(
+    val: Sequence[Tensor], my_device: Device
+) -> Tuple[Tensor, Tensor, Tensor]:
     x = val[0]
     pid = val[1]
     x = Variable(x)
@@ -400,12 +423,12 @@ def prepare_infer_data_cnnlstm(val, my_device):
     return x, seq_lengths, pid
 
 
-class RandomSwitchAxisTimeSeries(object):
+class RandomSwitchAxisTimeSeries:
     """
     Randomly switch the three axises for the raw files
     """
 
-    def __call__(self, sample):
+    def __call__(self, sample: Tensor) -> Tensor:
         # TIME_STEP * 3 * FEATURE_SIZE
         x = sample[:, 0, :]
         y = sample[:, 1, :]
@@ -427,28 +450,28 @@ class RandomSwitchAxisTimeSeries(object):
         return sample
 
 
-class RotationAxisTimeSeries(object):
+class RotationAxisTimeSeries:
     """
     Every sample belongs to one subject
     Rotation along an axis
     """
 
-    def __call__(self, sample):
+    def __call__(self, sample: Any) -> Array:
         # TIME_STEP * 3 * FEATURE_SIZE
         axis = np.random.uniform(low=-1, high=1, size=sample.shape[1])
         angle = np.random.uniform(low=-np.pi, high=np.pi)
         sample = np.swapaxes(sample, 1, 2)
         sample = np.matmul(sample, axangle2mat(axis, angle))
         sample = np.swapaxes(sample, 1, 2)
-        return sample
+        return cast(Array, sample)
 
 
-class Permutation_TimeSeries(object):
+class Permutation_TimeSeries:
     """
     Rearrange certain segments of the data
     """
 
-    def __call__(self, sample):
+    def __call__(self, sample: Any) -> Tensor:
         # TIME_STEP * 3 * FEATURE_SIZE
         sample = np.swapaxes(sample, 1, 2)
         # MIN one segment
@@ -464,11 +487,11 @@ class Permutation_TimeSeries(object):
         )
 
         sample = np.swapaxes(sample, 1, 2)
-        sample = torch.tensor(sample)
-        return sample
+        tensor_sample = torch.tensor(sample)
+        return tensor_sample
 
 
-def get_seq_lens(pid_list):
+def get_seq_lens(pid_list: Tensor) -> Tensor:
     lens = np.where(pid_list[:-1] != pid_list[1:])[0]
     lens = np.concatenate((lens, [len(pid_list) - 1]))
     seq_lengths = []
@@ -482,7 +505,7 @@ def get_seq_lens(pid_list):
 
 # Taken from
 # https://github.com/terryum/Data-Augmentation-For-Wearable-Sensor-Data
-def DA_Permutation(X, nPerm=4, minSegLength=10):
+def DA_Permutation(X: Array, nPerm: int = 4, minSegLength: int = 10) -> Array:
     X_new = np.zeros(X.shape)
     idx = np.random.permutation(nPerm)
     bWhile = True
@@ -505,18 +528,18 @@ def DA_Permutation(X, nPerm=4, minSegLength=10):
     return X_new
 
 
-class ClampTrans(object):
+class ClampTrans:
     """
     Randomly switch the three axises for the raw files
     """
 
-    def __call__(self, sample):
+    def __call__(self, sample: Tensor) -> Tensor:
         max_abs_val = 3
         sample = torch.clamp(sample, min=-max_abs_val, max=max_abs_val)
         return sample
 
 
-def setup_transforms(augment_mode, is_train):
+def setup_transforms(augment_mode: str, is_train: bool) -> Callable[[Tensor], Tensor]:
     my_transform = ClampTrans()
     if augment_mode == "cnn_lstm" and is_train:
         my_transform = transforms.Compose(
@@ -536,7 +559,7 @@ def setup_transforms(augment_mode, is_train):
 #                        Taken from Actipy. Need to update if actipy changes.
 # https://github.com/OxWearables/actipy/blob/5ca689a1bca1a338712a5e8b9831eaf9e20d95d9/src/actipy/processing.py#L97
 ##########################################################################
-def get_wear_time(t, tol=0.1):
+def get_wear_time(t: pd.Series, tol: float = 0.1) -> Tuple[float, int]:
     """ Return wear time in seconds and number of interrupts. """
     tdiff = t.diff()
     ttol = tdiff.mode().max() * (1 + tol)
@@ -545,7 +568,11 @@ def get_wear_time(t, tol=0.1):
     return total_time, num_interrupts
 
 
-def detect_nonwear(data, patience='90m', stationary_indicator=None):
+def detect_nonwear(
+    data: pd.DataFrame,
+    patience: str = '90m',
+    stationary_indicator: Optional[pd.Series] = None,
+) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """
     Detect nonwear episodes based on long periods of no movement.
 
@@ -562,7 +589,7 @@ def detect_nonwear(data, patience='90m', stationary_indicator=None):
     :rtype: (pandas.DataFrame, dict)
     """
 
-    info = {}
+    info: Dict[str, Any] = {}
 
     if stationary_indicator is None:
         stationary_indicator = get_stationary_indicator(data)
@@ -590,7 +617,9 @@ def detect_nonwear(data, patience='90m', stationary_indicator=None):
     return data, info
 
 
-def get_stationary_indicator(data, window='10s', stdtol=15 / 1000):
+def get_stationary_indicator(
+    data: pd.DataFrame, window: str = '10s', stdtol: float = 15 / 1000
+) -> pd.Series:
     """
     Taken from Actipy
 
@@ -609,7 +638,7 @@ def get_stationary_indicator(data, window='10s', stdtol=15 / 1000):
     :rtype: pandas.Series
     """
 
-    def fn(data):
+    def fn(data: pd.DataFrame) -> pd.Series:
         return (
             (data[['x', 'y', 'z']]
              .rolling(window)
@@ -630,7 +659,7 @@ def get_stationary_indicator(data, window='10s', stdtol=15 / 1000):
     return stationary_indicator
 
 
-def slice_time(x, start, stop):
+def slice_time(x: Any, start: Any, stop: Any) -> Any:
     """ In pandas, slicing DateTimeIndex arrays is right-closed.
     This function performs right-open slicing. """
     x = x.loc[start: stop]
@@ -638,7 +667,13 @@ def slice_time(x, start, stop):
     return x
 
 
-def chunker(data, chunksize='4h', leeway='0h', fn=None, fntrim=True):
+def chunker(
+    data: pd.DataFrame,
+    chunksize: str = '4h',
+    leeway: str = '0h',
+    fn: Optional[Callable[[Any], Any]] = None,
+    fntrim: bool = True,
+) -> Generator[Any, None, None]:
     """ Return chunk generator for a given datetime-indexed DataFrame.
     A `leeway` parameter can be used to obtain overlapping chunks (e.g. leeway='30m').
     If a function `fn` is provided, it is applied to each chunk. The leeway is

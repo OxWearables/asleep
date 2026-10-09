@@ -26,6 +26,17 @@ $ java -version
 $ pip install asleep
 ```
 
+# Development checks
+
+Install the development dependencies and run the same quality gates used by tox:
+
+```bash
+$ pip install -e '.[dev,test]'
+$ ruff check .
+$ mypy
+$ pytest
+```
+
 # Usage
 All the processing will be much faster after the first time because the model weights will to have to be downloaded
 the first time that the package is used.
