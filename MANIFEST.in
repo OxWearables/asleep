@@ -1,4 +1,5 @@
 include tox.ini
+include constraints/*.txt
 include *.md
 recursive-include tests *.py
 recursive-include assets *.jpg *.lzma

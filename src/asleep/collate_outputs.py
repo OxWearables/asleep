@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 import argparse
 import json
 import gzip
 import zipfile
 from collections import OrderedDict
+from os import PathLike
+from typing import Any, Dict, Optional, Sequence, Union
 
 import pandas as pd
 from pathlib import Path
@@ -10,10 +14,10 @@ from tqdm.auto import tqdm
 
 
 def collate_outputs(
-    results_dir,
-    collated_results_dir="collated_outputs/",
-    include_files=None,
-):
+    results_dir: Union[str, PathLike[str]],
+    collated_results_dir: Union[str, PathLike[str]] = "collated_outputs/",
+    include_files: Optional[Sequence[str]] = None,
+) -> None:
     """Collate selected results files in <results_dir>.
     :param str results_dir: Root directory in which to search for result files.
     :param str collated_results_dir: Directory to write the collated files to.
@@ -114,14 +118,16 @@ def collate_outputs(
     return
 
 
-def collate_jsons(file_list, outfile, overwrite=True):
+def collate_jsons(
+    file_list: Sequence[Path], outfile: Path, overwrite: bool = True
+) -> None:
     """ Collate a list of JSON files into a single CSV file."""
 
     if overwrite and outfile.exists():
         print(f"Overwriting existing file: {outfile}")
         outfile.unlink()  # remove existing file
 
-    df = []
+    records: list[Dict[str, Any]] = []
     for file in tqdm(file_list):
         file_path = Path(file)
 
@@ -149,10 +155,10 @@ def collate_jsons(file_list, outfile, overwrite=True):
                 j = json.load(f, object_pairs_hook=OrderedDict)
 
         j['filepath'] = str(file)
-        df.append(j)
+        records.append(j)
 
-    if df:  # Only create DataFrame if we have data
-        df = pd.DataFrame.from_dict(df)  # merge to a dataframe
+    if records:  # Only create DataFrame if we have data
+        df = pd.DataFrame.from_dict(records)  # merge to a dataframe
         # convert any OrderedDict cell values to regular dict
         df = df.applymap(convert_ordereddict)
         df.to_csv(outfile, index=False)
@@ -160,7 +166,9 @@ def collate_jsons(file_list, outfile, overwrite=True):
     return
 
 
-def collate_csvs(file_list, outfile, overwrite=True):
+def collate_csvs(
+    file_list: Sequence[Path], outfile: Path, overwrite: bool = True
+) -> None:
     """ Collate a list of CSV files into a single CSV file, adding filepath column."""
 
     if overwrite and outfile.exists():
@@ -177,14 +185,14 @@ def collate_csvs(file_list, outfile, overwrite=True):
     return
 
 
-def convert_ordereddict(value):
+def convert_ordereddict(value: Any) -> Any:
     """ Convert OrderedDict to regular dict """
     if isinstance(value, OrderedDict):
         return dict(value)
     return value
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Collate asleep output files from multiple runs into single CSV files",
         formatter_class=argparse.RawDescriptionHelpFormatter,

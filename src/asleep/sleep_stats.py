@@ -1,11 +1,21 @@
 # This file will compute all the necessary sleep parameters
+from __future__ import annotations
+
+from datetime import date, timedelta
+from typing import Any, List, MutableMapping, Sequence, Tuple, TypeVar, cast
+
 import numpy as np
-from datetime import timedelta
+from numpy.typing import NDArray
 import pandas as pd
 from collections import Counter
 import re
 
 WAKE_LABEL = 0
+Array = NDArray[Any]
+T = TypeVar("T")
+SleepParameters = Tuple[
+    float, float, float, float, float, float, float, float, float, float, float, float
+]
 
 
 # Design a day class that stores all the information for a day
@@ -14,19 +24,18 @@ WAKE_LABEL = 0
 # It also has a function to compute the summary statistics, get non-wear time, etc.
 # The day class should be able to be serialized to json
 
-def date_parser(t):
+def date_parser(t: str) -> pd.Timestamp:
     """
     Parse date a date string of the form e.g.
     2020-06-14 19:01:15.123+0100 [Europe/London]
     """
-    tz = re.search(r"(?<=\[).+?(?=\])", t)
-    if tz is not None:
-        tz = tz.group()
+    tz_match = re.search(r"(?<=\[).+?(?=\])", t)
+    tz = tz_match.group() if tz_match is not None else None
     t = re.sub(r"\[(.*?)\]", "", t)
     return pd.to_datetime(t, utc=True).tz_convert(tz)
 
 
-def psg_five2three(y, y_pred):
+def psg_five2three(y: Array, y_pred: Array) -> Tuple[Array, Array]:
     my_y = np.copy(y)
     my_y_pred = np.copy(y_pred)
     my_y[my_y == 2] = 1
@@ -40,7 +49,7 @@ def psg_five2three(y, y_pred):
 
 
 # **** individual metric **** #
-def get_sleep_onset_index(sleep_stages):
+def get_sleep_onset_index(sleep_stages: Array) -> int:
     i = 0
     k = 0
     threshold = 3  # epochs
@@ -55,34 +64,34 @@ def get_sleep_onset_index(sleep_stages):
     return i - (threshold - 1)
 
 
-def get_sol(sleep_stages):
+def get_sol(sleep_stages: Array) -> float:
     # sleep onset latency
     # time in bed/light off till the first episode of sleep
     return get_sleep_onset_index(sleep_stages) * 0.5
 
 
-def get_waso(sleep_stages):
+def get_waso(sleep_stages: Array) -> float:
     # wake after sleep onset, periods of wakefulness occurring after defined sleep onset
     # Sleep onset occurs after 1.5 mins of non-wake stages
     sleep_onset_index = get_sleep_onset_index(sleep_stages)
     stages_after_sleep_onset = sleep_stages[sleep_onset_index:]
     total_wake = np.sum(stages_after_sleep_onset == WAKE_LABEL) * 0.5
-    return total_wake
+    return float(total_wake)
 
 
-def get_tst(sleep_stages):
+def get_tst(sleep_stages: Array) -> float:
     # Total sleep time
     # input numpy array
     # return in mins
-    return np.sum(sleep_stages != 0) * 0.5
+    return float(np.sum(sleep_stages != 0) * 0.5)
 
 
-def get_se(sleep_stages):
+def get_se(sleep_stages: Array) -> float:
     # Sleep efficiency: TST/(time in bed)
     return get_tst(sleep_stages) / (len(sleep_stages) * 0.5)
 
 
-def get_reml(sleep_stages, rem_label=4):
+def get_reml(sleep_stages: Array, rem_label: int = 4) -> float:
     # Rapid eye movement latency is the time from the sleep onset to the first
     # epoch of REM sleep
     i = 0
@@ -94,7 +103,9 @@ def get_reml(sleep_stages, rem_label=4):
     return i * 0.5 - get_sol(sleep_stages)
 
 
-def get_stage_lens(sleep_stages, rem_label=4):
+def get_stage_lens(
+    sleep_stages: Array, rem_label: int = 4
+) -> Tuple[float, float, float, float, float, float]:
     # Sleep efficiency: TST/(time in bed)
     wake = np.sum(sleep_stages == 0) * 0.5
     n1 = np.sum(sleep_stages == 1) * 0.5
@@ -102,10 +113,14 @@ def get_stage_lens(sleep_stages, rem_label=4):
     n3 = np.sum(sleep_stages == 3) * 0.5
     nrem = n1 + n2 + n3
     rem = np.sum(sleep_stages == rem_label) * 0.5
-    return wake, n1, n2, n3, nrem, rem
+    return (
+        float(wake), float(n1), float(n2), float(n3), float(nrem), float(rem)
+    )
 
 
-def get_stage_portions(sleep_stages, rem_label=4):
+def get_stage_portions(
+    sleep_stages: Array, rem_label: int = 4
+) -> Tuple[float, float, float, float, float, float]:
     # Sleep efficiency: TST/(time in bed)
     tst = get_tst(sleep_stages)
     wake = np.sum(sleep_stages == 0) * 0.5 / tst
@@ -114,10 +129,12 @@ def get_stage_portions(sleep_stages, rem_label=4):
     n3 = np.sum(sleep_stages == 3) * 0.5 / tst
     nrem = n1 + n2 + n3
     rem = np.sum(sleep_stages == rem_label) * 0.5 / tst
-    return wake, n1, n2, n3, nrem, rem
+    return (
+        float(wake), float(n1), float(n2), float(n3), float(nrem), float(rem)
+    )
 
 
-def get_all_sleep_paras(sleep_stages, rem_label=4):
+def get_all_sleep_paras(sleep_stages: Array, rem_label: int = 4) -> SleepParameters:
     sol = get_sol(sleep_stages)
     tst = get_tst(sleep_stages)
     waso = get_waso(sleep_stages)
@@ -128,7 +145,7 @@ def get_all_sleep_paras(sleep_stages, rem_label=4):
     return sol, tst, waso, reml, se, wake, n1, n2, n3, nrem, rem, num_transitions
 
 
-def get_AgeAndAHI(meta_df, subject_id):
+def get_AgeAndAHI(meta_df: pd.DataFrame, subject_id: Any) -> Tuple[Any, Any]:
     age = meta_df[meta_df["Study ID"] == subject_id]["Age at Study"].item()
     AHI = meta_df[meta_df["Study ID"] ==
                   subject_id]["#resp events/TST (hr)=AHI"].item()
@@ -136,10 +153,10 @@ def get_AgeAndAHI(meta_df, subject_id):
 
 
 # get sleep bounts
-def get_sleep_bouts(sleep_stages):
+def get_sleep_bouts(sleep_stages: Sequence[T]) -> List[T]:
     # if the next stage is back to the original stage, then keep the current
     # one
-    new_stages = []
+    new_stages: List[T] = []
     i = 0
     while i < len(sleep_stages) - 2:
         if sleep_stages[i] == sleep_stages[i + 1]:
@@ -157,17 +174,17 @@ def get_sleep_bouts(sleep_stages):
     return new_stages
 
 
-def most_common(lst):
+def most_common(lst: Sequence[T]) -> T:
     data = Counter(lst)
     return data.most_common(1)[0][0]
 
 
 # get sleep bouts
-def get_five_min_sleep_bouts(sleep_stages):
+def get_five_min_sleep_bouts(sleep_stages: Sequence[T]) -> List[T]:
     # if the next stage is back to the original stage, then keep the current
     # one
     start_idx = 0  # sleep bout for every 5 minutes
-    sleep_bouts = []
+    sleep_bouts: List[T] = []
     bout_length = 10  # epochs
     while start_idx < len(sleep_stages) - bout_length:
         end_idx = start_idx + bout_length + 1
@@ -178,7 +195,7 @@ def get_five_min_sleep_bouts(sleep_stages):
     return sleep_bouts
 
 
-def get_num_stage_transition(sleep_stages):
+def get_num_stage_transition(sleep_stages: Array) -> float:
     """
     Taken from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2982738/
     Utility of Sleep Stage Transitions in Assessing Sleep Continuity
@@ -204,7 +221,9 @@ def get_num_stage_transition(sleep_stages):
 
 
 # **** Overall metric estimates **** #
-def get_sleep_paras(subject_id, y_df, y_pred, pid):
+def get_sleep_paras(
+    subject_id: Any, y_df: Array, y_pred: Array, pid: Array
+) -> List[float]:
     # This extracts both ground truth and prediction (mostly for model evaluation)
     # INPUT df are actually NP arrays
     subject_filter = pid == subject_id
@@ -213,7 +232,7 @@ def get_sleep_paras(subject_id, y_df, y_pred, pid):
     y_df = y_df[subject_filter]
     y_pred_df = y_pred[subject_filter]
 
-    paras = []
+    paras: List[float] = []
     (
         sol,
         tst,
@@ -249,7 +268,7 @@ def get_sleep_paras(subject_id, y_df, y_pred, pid):
     return paras
 
 
-def get_sleep_block_day(first_time):
+def get_sleep_block_day(first_time: Any) -> date:
     # get hour of a timestamp first_time
     start_hour = 12
     if first_time.hour >= 12:
@@ -262,17 +281,17 @@ def get_sleep_block_day(first_time):
         block_start = block_start.replace(
             hour=start_hour, minute=0, second=0, microsecond=0
         )
-    return block_start.date()
+    return cast(date, block_start.date())
 
 
 def add_mean_and_median(
-        data_df,
-        data_dict,
-        metric_list,
-        name_prefix="overall",
-        get_mean=True,
-        get_median=True,
-):
+        data_df: pd.DataFrame,
+        data_dict: MutableMapping[str, Any],
+        metric_list: Sequence[str],
+        name_prefix: str = "overall",
+        get_mean: bool = True,
+        get_median: bool = True,
+) -> MutableMapping[str, Any]:
     var_means = data_df.mean(axis=0, numeric_only=True)
     var_median = data_df.median(axis=0, numeric_only=True)
 
@@ -292,16 +311,16 @@ def add_mean_and_median(
 
 
 def compute_stats(
-        summary_df,
-        y_pred,
-        times,
-        weekday_y_pred,
-        weekday_times,
-        weekend_y_pred,
-        weekend_times,
-        metric_list,
-):
-    summary_dict = {}
+        summary_df: pd.DataFrame,
+        y_pred: Array,
+        times: Sequence[Any],
+        weekday_y_pred: Array,
+        weekday_times: Sequence[Any],
+        weekend_y_pred: Array,
+        weekend_times: Sequence[Any],
+        metric_list: Sequence[str],
+) -> MutableMapping[str, Any]:
+    summary_dict: MutableMapping[str, Any] = {}
     summary_dict = add_mean_and_median(summary_df, summary_dict, metric_list)
 
     # 0. Mon-Sun
@@ -397,7 +416,9 @@ def compute_stats(
     return summary_dict
 
 
-def get_stage_durations(summary_dict, hourly_y, stats_name):
+def get_stage_durations(
+    summary_dict: MutableMapping[str, Any], hourly_y: Array, stats_name: str
+) -> None:
     wake, n1, n2, n3, nrem, rem = get_stage_lens(hourly_y)
     tst = get_tst(hourly_y)
     summary_dict[stats_name + "_" + "wake_min"] = wake
@@ -409,7 +430,7 @@ def get_stage_durations(summary_dict, hourly_y, stats_name):
     summary_dict[stats_name + "_" + "tst_min"] = tst
 
 
-def obtain_non_wear_df(sleep_block_path):
+def obtain_non_wear_df(sleep_block_path: str) -> pd.DataFrame:
     all_time_df = pd.read_csv(
         sleep_block_path, parse_dates=["start", "end"], date_parser=date_parser
     )
@@ -419,9 +440,9 @@ def obtain_non_wear_df(sleep_block_path):
     time_df['imputed_duration-H'] = 0
 
     # Extract dates of the first days
-    start_dates = []
+    start_dates: List[date] = []
     non_wear_threshold_hrs = 2
-    ok_wear_time = []
+    ok_wear_time: List[bool] = []
     for _, row in time_df.iterrows():
         first_date = get_sleep_block_day(row["start"])
         start_dates.append(first_date)

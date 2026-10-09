@@ -1,11 +1,18 @@
+from __future__ import annotations
+
+from typing import Any, Tuple
+
 import joblib
-from utils import resize
+from asleep.utils import resize
 from asleep.models import SleepWindowSSL
 import os
 import numpy as np
+from numpy.typing import NDArray
 import pandas as pd
 import sys
 sys.path.append('..')
+
+Array = NDArray[Any]
 
 
 """
@@ -24,7 +31,7 @@ python train_capture24.py
 """
 
 
-def load_data():
+def load_data() -> Tuple[Array, Array, Array]:
     root = '/data/UKBB/capture24_30s/'  # change this path if needed
 
     X = np.load(os.path.join(root, 'X.npy'))  # accelerometer data
@@ -62,7 +69,7 @@ def load_data():
     )
 
 
-def main():
+def main() -> None:
     X, y, pid = load_data()
 
     my_device = 'cuda:0'

@@ -109,7 +109,7 @@ classifiers = [  # Optional
 dependencies = [ # Optional
   "peppercorn",
   "actipy",
-  "numpy",
+  "numpy>=1.24",
   "pandas",
   "scipy",
   "joblib",
@@ -130,7 +130,14 @@ dependencies = [ # Optional
 # Similar to `dependencies` above, these must be valid existing
 # projects.
 [project.optional-dependencies] # Optional
-dev = ["check-manifest"]
+dev = [
+  "build",
+  "check-manifest",
+  "mypy==1.14.1",
+  "pytest",
+  "ruff==0.15.20",
+  "twine",
+]
 test = ["coverage"]
 
 # List URLs that are relevant to your project
@@ -160,6 +167,9 @@ test = ["coverage"]
 # installed, specify them here.
 #package-data = {"sample" = ["*.dat"]}
 
+[tool.setuptools.package-data]
+asleep = ["py.typed"]
+
 [build-system]
 # These are the assumed default build requirements from pip:
 # https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
@@ -181,3 +191,37 @@ extend-exclude = [
 [tool.ruff.lint]
 select = ["E", "W", "F"]
 ignore = ["E402"]
+
+[tool.mypy]
+python_version = "3.8"
+files = ["src/asleep", "tests", "hubconf.py"]
+exclude = ["^src/asleep/torch_hub_cache/"]
+mypy_path = "src"
+explicit_package_bases = true
+strict = true
+# Several supported scientific/ML dependencies expose partially typed APIs.
+# Calls crossing those boundaries are typed explicitly in this project.
+disallow_untyped_calls = false
+warn_unused_configs = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = [
+  "actipy.*",
+  "hydra.*",
+  "joblib.*",
+  "matplotlib.*",
+  "omegaconf.*",
+  "pandas.*",
+  "scipy.*",
+  "sklearn.*",
+  "stepcount.*",
+  "tqdm.*",
+  "transforms3d.*",
+  "torchvision.*",
+  "utils.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

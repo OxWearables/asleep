@@ -1,27 +1,36 @@
 """ Helper classes and functions for the SSL model """
 
+from __future__ import annotations
+
+from os import PathLike
+from typing import Any, List, Optional, Sequence, Tuple, Union
+
 import torch
 import torch.nn as nn
 import numpy as np
+from numpy.typing import NDArray
 from pathlib import Path
 from tqdm import tqdm
 from torchvision import transforms
 from torch.utils.data.dataset import Dataset
+from torch.utils.data import DataLoader
 from asleep.utils import EarlyStopping, RandomSwitchAxis, RotationAxis
 
 
 verbose = False
 torch_cache_path = Path(__file__).parent / 'torch_hub_cache'
+Array = NDArray[Any]
+Device = Union[str, torch.device]
 
 
-class NormalDataset(Dataset):
+class NormalDataset(Dataset[Tuple[torch.Tensor, Any, Any]]):
     def __init__(self,
-                 X,
-                 y=None,
-                 pid=None,
-                 name="",
-                 augmentation=False,
-                 transpose_channels_first=True):
+                 X: Array,
+                 y: Optional[Array] = None,
+                 pid: Optional[Array] = None,
+                 name: str = "",
+                 augmentation: bool = False,
+                 transpose_channels_first: bool = True) -> None:
 
         X = X.astype(
             "f4"
@@ -30,6 +39,7 @@ class NormalDataset(Dataset):
         if transpose_channels_first:
             X = np.transpose(X, (0, 2, 1))
         self.X = torch.from_numpy(X)
+        self.y: Optional[torch.Tensor]
 
         if y is not None:
             self.y = torch.tensor(y)
@@ -47,10 +57,10 @@ class NormalDataset(Dataset):
         if verbose:
             print(f"{name} set sample count: {len(self.X)}")
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.X)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: Any) -> Tuple[torch.Tensor, Any, Any]:
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
@@ -72,7 +82,7 @@ class NormalDataset(Dataset):
         return sample, y, pid
 
 
-def get_sslnet(tag='v1.0.0', pretrained=False):
+def get_sslnet(tag: str = 'v1.0.0', pretrained: bool = False) -> nn.Module:
     """
     Load and return the Self Supervised Learning (SSL) model from pytorch hub.
     :param str tag: Tag on the ssl-wearables repo to check out
@@ -91,21 +101,21 @@ def get_sslnet(tag='v1.0.0', pretrained=False):
 
     # find repo cache dir that matches repo name and tag
     cache_dirs = [f for f in torch_cache_path.iterdir() if f.is_dir()]
-    repo_path = next(
+    cached_repo_path = next(
         (f for f in cache_dirs if repo_name in f.name and tag in f.name),
         None)
 
-    if repo_path is None:
-        repo_path = repo
+    if cached_repo_path is None:
+        repo_location = repo
         source = 'github'
     else:
-        repo_path = str(repo_path)
+        repo_location = str(cached_repo_path)
         source = 'local'
         if verbose:
-            print(f'Using local {repo_path}')
+            print(f'Using local {repo_location}')
 
     sslnet: nn.Module = torch.hub.load(
-        repo_path,
+        repo_location,
         'harnet30',
         trust_repo=True,
         source=source,
@@ -115,8 +125,13 @@ def get_sslnet(tag='v1.0.0', pretrained=False):
     return sslnet
 
 
-def predict(model, data_loader, device,
-            output_logits=False, name='train'):
+def predict(
+    model: nn.Module,
+    data_loader: DataLoader[Any],
+    device: Device,
+    output_logits: bool = False,
+    name: str = 'train',
+) -> Tuple[Array, Array, Array]:
     """
     Iterate over the dataloader and do prediction with a pytorch model.
     :param nn.Module model: pytorch Module
@@ -129,9 +144,9 @@ def predict(model, data_loader, device,
     :rtype: (np.ndarray, np.ndarray, np.ndarray)
     """
 
-    predictions_list = []
-    true_list = []
-    pid_list = []
+    predictions_list: List[torch.Tensor] = []
+    true_list: List[torch.Tensor] = []
+    pid_list: List[Any] = []
     model.eval()
 
     for i, (x, y, pid) in enumerate(
@@ -147,33 +162,34 @@ def predict(model, data_loader, device,
                 predictions_list.append(pred_y.cpu())
             pid_list.extend(pid)
 
-    predictions_list = torch.cat(predictions_list)
-    true_list = torch.cat(true_list)
+    predictions = torch.cat(predictions_list)
+    true_values = torch.cat(true_list)
 
     if output_logits:
         return (
-            torch.flatten(true_list).numpy(),
-            predictions_list.numpy(),
+            torch.flatten(true_values).numpy(),
+            predictions.numpy(),
             np.array(pid_list),
         )
     else:
         return (
-            torch.flatten(true_list).numpy(),
-            torch.flatten(predictions_list).numpy(),
+            torch.flatten(true_values).numpy(),
+            torch.flatten(predictions).numpy(),
             np.array(pid_list),
         )
 
 
 def train(
-        model,
-        train_loader,
-        val_loader,
-        device,
-        class_weights=None,
-        weights_path='weights.pt',
-        num_epoch=100,
-        learning_rate=0.0001,
-        patience=5):
+        model: nn.Module,
+        train_loader: DataLoader[Any],
+        val_loader: DataLoader[Any],
+        device: Device,
+        class_weights: Optional[Sequence[float]] = None,
+        weights_path: Union[str, PathLike[str]] = 'weights.pt',
+        num_epoch: int = 100,
+        learning_rate: float = 0.0001,
+        patience: int = 5,
+) -> nn.Module:
     """
     Iterate over the training dataloader and train a pytorch model.
     After each epoch, validate model and early stop when validation
@@ -196,8 +212,8 @@ def train(
     )
 
     if class_weights is not None:
-        class_weights = torch.FloatTensor(class_weights).to(device)
-        loss_fn = nn.CrossEntropyLoss(weight=class_weights)
+        weight_tensor = torch.FloatTensor(class_weights).to(device)
+        loss_fn = nn.CrossEntropyLoss(weight=weight_tensor)
     else:
         loss_fn = nn.CrossEntropyLoss()
 
@@ -207,8 +223,8 @@ def train(
 
     for epoch in range(num_epoch):
         model.train()
-        train_losses = []
-        train_acces = []
+        train_losses: List[torch.Tensor] = []
+        train_acces: List[torch.Tensor] = []
         for i, (x, y, _) in enumerate(tqdm(train_loader, disable=not verbose)):
             x.requires_grad_(True)
             x = x.to(device, dtype=torch.float)
@@ -253,12 +269,17 @@ def train(
     return model
 
 
-def _validate_model(model, val_loader, device, loss_fn):
+def _validate_model(
+    model: nn.Module,
+    val_loader: DataLoader[Any],
+    device: Device,
+    loss_fn: nn.Module,
+) -> Tuple[float, float]:
     """ Iterate over a validation data loader and return
         mean model loss and accuracy. """
     model.eval()
-    losses = []
-    acces = []
+    losses: List[torch.Tensor] = []
+    acces: List[torch.Tensor] = []
     for i, (x, y, _) in enumerate(val_loader):
         with torch.inference_mode():
             x = x.to(device, dtype=torch.float)
@@ -274,6 +295,6 @@ def _validate_model(model, val_loader, device, loss_fn):
 
             losses.append(loss.cpu().detach())
             acces.append(val_acc.cpu().detach())
-    losses = np.array(losses)
-    acces = np.array(acces)
-    return np.mean(losses), np.mean(acces)
+    loss_values: Array = np.array(losses)
+    accuracy_values: Array = np.array(acces)
+    return float(np.mean(loss_values)), float(np.mean(accuracy_values))

@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+from typing import Any, List, Tuple, Union, cast
+
 import numpy as np
+from numpy.typing import NDArray
 from hydra import compose, initialize
 from omegaconf import OmegaConf
 from tqdm import tqdm
@@ -18,16 +23,21 @@ from torch.utils.data import DataLoader
 from datetime import datetime
 import torch.nn.functional as F
 
+Array = NDArray[Any]
+Device = Union[str, torch.device]
+
 cuda = torch.cuda.is_available()
 now = datetime.now()
 my_abs_path = os.path.dirname(os.path.abspath(__file__))
 
 
-def forward_batches(model, my_data_loader, my_device):
+def forward_batches(
+    model: torch.nn.Module, my_data_loader: DataLoader[Any], my_device: Device
+) -> Tuple[Array, Array, Array]:
     model.eval()
-    test_y_pred = []
-    test_pid = []
-    probs = []
+    test_y_pred: List[Any] = []
+    test_pid: List[Any] = []
+    probs: List[Any] = []
 
     # accumulate all the losses into one
     for i, val in tqdm(enumerate(my_data_loader)):
@@ -38,14 +48,14 @@ def forward_batches(model, my_data_loader, my_device):
             probs.extend(batch_prob.cpu().detach().numpy())
             test_y_pred.extend(torch.max(logits, 1)[1].cpu().detach().numpy())
             test_pid.extend(my_pid)
-    test_pid = np.stack(test_pid)
-    test_y_pred = np.stack(test_y_pred)
+    test_pid_array = np.stack(test_pid)
+    test_y_pred_array = np.stack(test_y_pred)
     test_probs = np.stack(probs)
 
-    return test_y_pred, test_pid, test_probs
+    return test_y_pred_array, test_pid_array, test_probs
 
 
-def load_data(cfg):
+def load_data(cfg: Any) -> Tuple[Array, Array]:
     ####################
     #   Load data
     ###################
@@ -72,7 +82,9 @@ def load_data(cfg):
     return X, pid
 
 
-def setup_dataset(X, pid, cfg, is_train=False):
+def setup_dataset(
+    X: Array, pid: Array, cfg: Any, is_train: bool = False
+) -> DataLoader[Any]:
     num_workers = 0
     torch.multiprocessing.set_start_method("spawn", force=True)
 
@@ -83,7 +95,7 @@ def setup_dataset(X, pid, cfg, is_train=False):
         transform=my_transform,
     )
     col_fn = cnn_lstm_infer_collate
-    my_loader = DataLoader(
+    my_loader: DataLoader[Any] = DataLoader(
         dataset,
         batch_size=cfg.model.batch_size,
         collate_fn=col_fn,
@@ -93,7 +105,7 @@ def setup_dataset(X, pid, cfg, is_train=False):
     return my_loader
 
 
-def config_device(cfg):
+def config_device(cfg: Any) -> str:
     if cfg.gpu != 'cpu':
         my_device = str(cfg.gpu)
     else:
@@ -106,7 +118,9 @@ def config_device(cfg):
     return my_device
 
 
-def setup_cnn(cfg, my_device, weight_path, local_repo_path=""):
+def setup_cnn(
+    cfg: Any, my_device: Device, weight_path: str, local_repo_path: str = ""
+) -> torch.nn.Module:
     print("setting up cnn")
     if len(local_repo_path) > 0:
         print("access local repo")
@@ -139,10 +153,10 @@ def setup_cnn(cfg, my_device, weight_path, local_repo_path=""):
                                )
 
     model.to(my_device, dtype=torch.float)
-    return model
+    return cast(torch.nn.Module, model)
 
 
-def get_unique_pid_in_place(my_pids):
+def get_unique_pid_in_place(my_pids: Array) -> Array:
     # Ensure that pid ordering is in place.
     # np.unique() will sort the array so that the y pred order will mismatch
     pre = -1
@@ -156,7 +170,7 @@ def get_unique_pid_in_place(my_pids):
     return np.array(pids)
 
 
-def align_output(y_red, real_pid, test_pid):
+def align_output(y_red: Array, real_pid: Array, test_pid: Array) -> Array:
     my_ids = get_unique_pid_in_place(real_pid)
     aligned_pred = []
 
@@ -167,7 +181,9 @@ def align_output(y_red, real_pid, test_pid):
     return np.array(aligned_pred)
 
 
-def sleepnet_inference(X, pid, weight_path, cfg, local_repo_path=""):
+def sleepnet_inference(
+    X: Array, pid: Array, weight_path: str, cfg: Any, local_repo_path: str = ""
+) -> Tuple[Array, Array]:
     start = time.time()
     my_device = config_device(cfg)
 
@@ -202,7 +218,14 @@ def sleepnet_inference(X, pid, weight_path, cfg, local_repo_path=""):
     return aligned_y_pred, test_pid
 
 
-def start_sleep_net(X, pid, data_root, weight_path, device_id='cpu', local_repo_path=""):
+def start_sleep_net(
+    X: Array,
+    pid: Array,
+    data_root: str,
+    weight_path: str,
+    device_id: Device = 'cpu',
+    local_repo_path: str = "",
+) -> Tuple[Array, Array]:
     initialize(config_path="conf")
     cfg = compose(
         "config_eval",

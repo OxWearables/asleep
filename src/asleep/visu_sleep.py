@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import os
 import pandas as pd
@@ -26,7 +28,7 @@ the following files:
 """
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="A tool to visualize the sleep prediction results",
         add_help=True
