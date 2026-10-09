@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from os import PathLike
 from typing import Any, Dict, Tuple, Union
+from importlib.metadata import version
 
 import pathlib
 import argparse
@@ -17,7 +18,6 @@ import shutil
 import datetime
 
 import torch
-from importlib.metadata import version
 
 import asleep.sleep_windows as sw
 from asleep.utils import data_long2wide, read, NpEncoder
@@ -101,15 +101,17 @@ def get_parsed_data(
 
         pathlib.Path(args.outdir).mkdir(parents=True, exist_ok=True)
         data.to_csv(raw_data_path)
-        with open(info_data_path, 'w', encoding='utf-8') as f:
-            json.dump(info, f, ensure_ascii=False, indent=4, cls=NpEncoder)
         print("Raw data file saved to: {}".format(raw_data_path))
-        print("Info data file saved to: {}".format(info_data_path))
     else:
         print("Raw data file already exists. Skipping raw data parsing.")
         data = pd.read_csv(raw_data_path)
         with open(info_data_path, 'r') as f:
             info = json.load(f)
+
+    info['AsleepVersion'] = version('asleep')
+    with open(info_data_path, 'w', encoding='utf-8') as f:
+        json.dump(info, f, ensure_ascii=False, indent=4, cls=NpEncoder)
+    print("Info data file saved to: {}".format(info_data_path))
     print(data.head())
     return data, info
 
@@ -390,14 +392,10 @@ def main() -> None:
 
     # 1. Parse raw files into a dataframe
     # Add non-wear detection
-    info = {}
-    info['AsleepVersion'] = version('asleep')
-
-    data, info_read = get_parsed_data(
+    data, info = get_parsed_data(
         raw_data_path, info_data_path, resample_hz, args)
     if args.remove_intermediate_files:
         os.remove(raw_data_path)
-    info.update(info_read)
 
     # 1.1 Transform data into a usable format for inference
     data2model, times, non_wear = transform_data2model_input(
