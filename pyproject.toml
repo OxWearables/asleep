@@ -165,3 +165,19 @@ test = ["coverage"]
 # https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
 requires = ["setuptools>=43.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+target-version = "py38"
+line-length = 99
+required-version = "==0.15.20"
+preview = true
+extend-exclude = [
+  "*.egg",
+  "data",
+  "src/asleep/torch_hub_cache",
+  "venv",
+]
+
+[tool.ruff.lint]
+select = ["E", "W", "F"]
+ignore = ["E402"]

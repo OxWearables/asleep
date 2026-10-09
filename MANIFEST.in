@@ -1,6 +1,5 @@
 include tox.ini
 include *.md
-include .flake8
 recursive-include tests *.py
 recursive-include assets *.jpg *.lzma
 recursive-include src *.yaml
