@@ -3,7 +3,6 @@ from hydra import compose, initialize
 from omegaconf import OmegaConf
 from tqdm import tqdm
 import time
-import os
 import gzip
 import os.path
 
