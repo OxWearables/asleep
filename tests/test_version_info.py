@@ -1,7 +1,7 @@
 import argparse
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import pandas as pd
 import pytest
@@ -34,8 +34,9 @@ def test_get_parsed_data_writes_package_version(
     assert persisted_info["AsleepVersion"] == "0.4.18"
 
 
+@pytest.mark.parametrize("cached_version", [None, "old"], ids=["legacy", "stale"])
 def test_get_parsed_data_refreshes_version_in_cached_info(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cached_version: Optional[str]
 ) -> None:
     raw_path = tmp_path / "raw.csv"
     info_path = tmp_path / "info.json"
@@ -48,7 +49,15 @@ def test_get_parsed_data_refreshes_version_in_cached_info(
             "non_wear": [False],
         }
     ).to_csv(raw_path, index=False)
-    info_path.write_text('{"AsleepVersion": "old"}', encoding="utf-8")
+    raw_before = raw_path.read_bytes()
+    cached_info: Dict[str, Any] = {
+        "StartTime": "2024-01-01 00:00:00",
+        "EndTime": "2024-01-01 00:00:00",
+        "SampleRate": 30.0,
+    }
+    if cached_version is not None:
+        cached_info["AsleepVersion"] = cached_version
+    info_path.write_text(json.dumps(cached_info), encoding="utf-8")
     monkeypatch.setattr(get_sleep, "version", lambda package: "0.4.18")
     monkeypatch.setattr(
         get_sleep,
@@ -61,7 +70,9 @@ def test_get_parsed_data_refreshes_version_in_cached_info(
 
     _, info = get_sleep.get_parsed_data(raw_path, info_path, 30, args)
 
-    assert info["AsleepVersion"] == "0.4.18"
+    expected_info = {**cached_info, "AsleepVersion": "0.4.18"}
+    assert info == expected_info
     with info_path.open(encoding="utf-8") as info_file:
         persisted_info = json.load(info_file)
-    assert persisted_info["AsleepVersion"] == "0.4.18"
+    assert persisted_info == expected_info
+    assert raw_path.read_bytes() == raw_before
