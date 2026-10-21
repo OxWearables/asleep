@@ -38,6 +38,11 @@ import warnings
 Array = NDArray[Any]
 Device = Union[str, torch.device]
 
+# Low-pass cutoff (Hz) applied before resampling to 30 Hz. It matches the
+# preprocessing of the training data and must be the same for device files
+# and CSV/pickle input so the model receives the same signal from either.
+LOWPASS_HZ = 15
+
 
 class NpEncoder(json.JSONEncoder):
     def default(self, obj: Any) -> Any:
@@ -86,7 +91,7 @@ def read(
 
         data, info = actipy.process(
             data, sample_rate,
-            lowpass_hz=20,
+            lowpass_hz=LOWPASS_HZ,
             calibrate_gravity=True,
             detect_nonwear=False,
             resample_hz=resample_hz,
@@ -104,7 +109,7 @@ def read(
 
         data, info = actipy.read_device(
             str(filepath),
-            lowpass_hz=15,
+            lowpass_hz=LOWPASS_HZ,
             calibrate_gravity=True,
             detect_nonwear=False,
             resample_hz=resample_hz,
