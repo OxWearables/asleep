@@ -5,18 +5,25 @@ on: [push, pull_request]
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
         python: ['3.8', '3.9']
-        platform: [ubuntu-latest, windows-latest, macos-latest]
+        # ubuntu-latest (26.04) plus the previous LTS image.
+        platform: [ubuntu-latest, ubuntu-24.04, windows-latest, macos-latest]
     runs-on: ${{ matrix.platform }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v7
+    # actions/setup-python has no Python 3.8/3.9 builds for the current
+    # ubuntu-latest (26.04) or arm64 macos-latest images; uv provides
+    # standalone builds for every platform.
     - name: Set up Python ${{ matrix.python }}
-      uses: actions/setup-python@v3
+      uses: astral-sh/setup-uv@v10.3.3
       with:
         python-version: ${{ matrix.python }}
+        activate-environment: true
+        venv-path: ${{ runner.temp }}/venv
     - name: Install test dependencies
-      run: python -m pip install -U tox
+      run: uv pip install tox
     - name: Test
       run: python -m tox -e py

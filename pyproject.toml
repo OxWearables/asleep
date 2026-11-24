@@ -111,7 +111,7 @@ dependencies = [ # Optional
   "actipy",
   "numpy>=1.24",
   "pandas",
-  "scipy",
+  "scipy>=1.9",
   "joblib",
   "torch",
   "torchvision",

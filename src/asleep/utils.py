@@ -57,9 +57,11 @@ class NpEncoder(json.JSONEncoder):
 
 def infer_freq(x: Any) -> pd.Timedelta:
     """ Like pd.infer_freq but more forgiving """
-    freq, _ = stats.mode(np.diff(x), keepdims=False)
-    freq = pd.Timedelta(freq)
-    return freq
+    # scipy.stats.mode only accepts numeric input (SciPy >= 1.11), so take the
+    # mode of the step sizes as integer nanoseconds.
+    steps_ns = np.asarray(np.diff(x)).astype("timedelta64[ns]").astype(np.int64)
+    mode_ns, _ = stats.mode(steps_ns, keepdims=False)
+    return pd.Timedelta(int(mode_ns), unit="ns")
 
 
 def read(
@@ -218,7 +220,7 @@ class NormalDataset(Dataset[Tuple[Tensor, Any, Any]]):
         if self.pid is not None:
             pid = self.pid[idx]
         else:
-            pid = np.NaN
+            pid = np.nan
 
         if self.transform is not None:
             sample = self.transform(sample)
@@ -296,7 +298,7 @@ class EarlyStopping:
         self.counter = 0
         self.best_score: Optional[float] = None
         self.early_stop = False
-        self.val_loss_min = np.Inf
+        self.val_loss_min = np.inf
         self.delta = delta
         self.trace_func = trace_func
 

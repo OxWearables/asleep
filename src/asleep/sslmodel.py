@@ -72,7 +72,7 @@ class NormalDataset(Dataset[Tuple[torch.Tensor, Any, Any]]):
         if self.pid is not None:
             pid = self.pid[idx]
         else:
-            pid = np.NaN
+            pid = np.nan
 
         if self.transform is not None:
             sample = self.transform(sample)
