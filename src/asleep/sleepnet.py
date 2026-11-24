@@ -218,6 +218,25 @@ def sleepnet_inference(
     return aligned_y_pred, test_pid
 
 
+def load_eval_config(data_root: str, device_id: Device = 'cpu') -> Any:
+    """Compose the SleepNet evaluation config from the packaged ``conf`` dir.
+
+    ``initialize`` is used as a context manager so Hydra's global state is
+    cleared afterwards, allowing repeated calls in the same process.
+    """
+    with initialize(version_base="1.3", config_path="conf"):
+        return compose(
+            "config_eval",
+            overrides=[
+                "deployment=true",
+                "data=deployment",
+                "model=cnn_lstm_eval",
+                "data.data_root=" + data_root,
+                "gpu=" + str(device_id),
+            ],
+        )
+
+
 def start_sleep_net(
     X: Array,
     pid: Array,
@@ -226,17 +245,7 @@ def start_sleep_net(
     device_id: Device = 'cpu',
     local_repo_path: str = "",
 ) -> Tuple[Array, Array]:
-    initialize(config_path="conf")
-    cfg = compose(
-        "config_eval",
-        overrides=[
-            "deployment=true",
-            "data=deployment",
-            "model=cnn_lstm_eval",
-            "data.data_root=" + data_root,
-            "gpu=" + str(device_id),
-        ],
-    )
+    cfg = load_eval_config(data_root, device_id)
     if cfg.verbose:
         print(OmegaConf.to_yaml(cfg, resolve=True))
     return sleepnet_inference(X, pid, weight_path, cfg, local_repo_path=local_repo_path)
