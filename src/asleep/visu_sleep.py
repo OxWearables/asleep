@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from typing import List
 import os
 import pandas as pd
 import numpy as np
@@ -10,6 +11,7 @@ from datetime import datetime, timedelta, time
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
+from matplotlib.artist import Artist
 
 """
 How to run the script:
@@ -139,7 +141,9 @@ def main() -> None:
 
     ax = fig.add_subplot(nrows, 1, idx)
     ax.axis('off')
-    legend_patches = [mlines.Line2D([], [], color='k', label='acceleration')]
+    legend_patches: List[Artist] = [
+        mlines.Line2D([], [], color='k', label='acceleration')
+    ]
 
     labels = ['sleep', 'wake', 'non_wear', 'time_in_bed']
     colors = ['#785EF0', '#FE6100', 'gray', 'yellow']
