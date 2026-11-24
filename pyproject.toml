@@ -116,7 +116,8 @@ dependencies = [ # Optional
   "torch",
   "torchvision",
   "transforms3d",
-  "stepcount",
+  "scikit-learn",
+  "tqdm",
   "hydra-core",
   "matplotlib"
 ]
@@ -139,6 +140,7 @@ dev = [
   "twine",
 ]
 test = ["coverage"]
+hmmlearn = ["hmmlearn"]
 
 # List URLs that are relevant to your project
 #
@@ -215,7 +217,7 @@ module = [
   "pandas.*",
   "scipy.*",
   "sklearn.*",
-  "stepcount.*",
+  "hmmlearn.*",
   "tqdm.*",
   "transforms3d.*",
   "torchvision.*",

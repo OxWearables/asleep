@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from os import PathLike
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, Iterator, Tuple, Union
 from importlib.metadata import version
+from contextlib import contextmanager
+from types import ModuleType
 
 import pathlib
 import argparse
@@ -19,6 +21,7 @@ import datetime
 
 import torch
 
+import asleep.hmm_utils as hmm_utils
 import asleep.sleep_windows as sw
 from asleep.utils import data_long2wide, read, NpEncoder
 from asleep.sleepnet import start_sleep_net
@@ -50,6 +53,32 @@ END_TIME_IDX = -1
 Array = NDArray[Any]
 
 
+@contextmanager
+def _legacy_stepcount_modules() -> Iterator[None]:
+    """Let pickles that reference ``stepcount.hmm_utils`` load without stepcount.
+
+    The released ``ssl.joblib.lzma`` model stores its HMM smoother as
+    ``stepcount.hmm_utils.HMMSmoother``. While loading, that module path is
+    mapped to the vendored :mod:`asleep.hmm_utils`, so the restored object
+    uses asleep's implementation whether or not stepcount is installed.
+    """
+    names = ("stepcount", "stepcount.hmm_utils")
+    saved = {name: sys.modules.get(name) for name in names}
+    if saved["stepcount"] is None:
+        stub = ModuleType("stepcount")
+        stub.__path__ = []
+        sys.modules["stepcount"] = stub
+    sys.modules["stepcount.hmm_utils"] = hmm_utils
+    try:
+        yield
+    finally:
+        for name, module in saved.items():
+            if module is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = module
+
+
 def load_model(
     model_path: Union[str, PathLike[str]], force_download: bool = False
 ) -> Any:
@@ -65,7 +94,8 @@ def load_model(
         with urllib.request.urlopen(url) as f_src, open(pth, "wb") as f_dst:
             shutil.copyfileobj(f_src, f_dst)
 
-    return joblib.load(pth)
+    with _legacy_stepcount_modules():
+        return joblib.load(pth)
 
 
 def get_parsed_data(

@@ -3,7 +3,6 @@ from __future__ import annotations
 from os import PathLike
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from stepcount import hmm_utils
 from sklearn.model_selection import GroupShuffleSplit
 import torch
 from scipy.special import softmax
@@ -16,6 +15,7 @@ import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from torch.autograd import Variable
 
+import asleep.hmm_utils as hmm_utils
 import asleep.sslmodel as sslmodel
 from asleep.utils import get_inverse_class_weights
 
