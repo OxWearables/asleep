@@ -8,7 +8,8 @@ jobs:
       fail-fast: false
       matrix:
         python: ['3.8', '3.9']
-        platform: [ubuntu-latest, windows-latest, macos-latest]
+        # ubuntu-latest (26.04) plus the previous LTS image.
+        platform: [ubuntu-latest, ubuntu-24.04, windows-latest, macos-latest]
     runs-on: ${{ matrix.platform }}
     steps:
     - name: Checkout
